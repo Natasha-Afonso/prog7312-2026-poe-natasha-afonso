@@ -1,4 +1,3 @@
-// src/components/SideBar.tsx
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, Radio, Bell, Settings } from "lucide-react";

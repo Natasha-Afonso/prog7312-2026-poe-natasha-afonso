@@ -1,4 +1,3 @@
-// src/components/MonitoringPanel.tsx
 import React, { useState, useEffect } from "react";
 import { Glass } from "./Glass";
 

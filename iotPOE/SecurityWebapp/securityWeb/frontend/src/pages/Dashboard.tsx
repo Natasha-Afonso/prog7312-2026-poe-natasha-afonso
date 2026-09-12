@@ -1,4 +1,3 @@
-// src/pages/DashboardPage.tsx
 import React, { useState, useEffect } from "react";
 import { Clock, Radio, Wifi, AlertTriangle } from "lucide-react";
 import { Glass } from "../components/Glass";

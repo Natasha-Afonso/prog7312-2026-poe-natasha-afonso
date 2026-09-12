@@ -1,4 +1,3 @@
-// src/components/TopBar.tsx
 import React from "react";
 import { LayoutGrid, ChevronRight, Search, Sliders, Bell } from "lucide-react";
 

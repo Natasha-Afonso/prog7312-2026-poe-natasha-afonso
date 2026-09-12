@@ -1,4 +1,3 @@
-// src/components/Glass.tsx
 import React from "react";
 
 //(glassDashboardAuthor,2026)
