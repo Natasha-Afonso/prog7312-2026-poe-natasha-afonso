@@ -2422,6 +2422,149 @@ transform: translate(22px, -50%);
 
 
 
+/* ---- Sensor Detail Page (telemetry panel CodePen) ---- */
+
+.sensor-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 4px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #34d399;
+  font-family: monospace;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.status-dot-ping {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+}
+
+.status-dot-ping::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #34d399;
+  opacity: .6;
+  animation: pingRing 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes pingRing {
+  0% { transform: scale(1); opacity: .6; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+.sensor-detail-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.version-tag {
+  font-family: monospace;
+  font-size: 11px;
+  padding: 2px 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.5);
+  margin-left: 8px;
+}
+
+.sensor-detail-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.sensor-detail-actions .btn-primary,
+.sensor-detail-actions .btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-panel {
+  display: flex;
+  flex-direction: column;
+  height: 380px;
+}
+
+.chart-panel > canvas,
+.chart-panel > div:last-child {
+  flex: 1;
+  position: relative;
+  margin-top: 12px;
+}
+
+.log-panel {
+  height: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+.telemetry-log-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 10px;
+}
+
+.telemetry-log {
+  flex: 1;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  background: rgba(0,0,0,0.25);
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.log-line {
+  margin-bottom: 6px;
+}
+
+.log-timestamp {
+  color: rgba(255,255,255,0.35);
+}
+
+.log-amber { color: #f59e0b; }
+.log-cyan { color: var(--accent); }
+
+.telemetry-log::-webkit-scrollbar {
+  width: 6px;
+}
+
+.telemetry-log::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.telemetry-log::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 3px;
+}
+
+.telemetry-log::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
 
 
 

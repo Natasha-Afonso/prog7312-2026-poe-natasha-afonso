@@ -9,7 +9,7 @@ import {
 
 import { SideBar } from "./components/SideBar";
 import { TopBar } from "./components/TopBar";
-
+import { SensorDetailPage} from "./pages/SensorDetailPage";
 import { DashboardPage} from "./pages/Dashboard";
 import { HealthCheckPage } from "./pages/HealthCheckPage";
 
@@ -54,7 +54,10 @@ const AppContent: React.FC = () => {
               element={<DashboardPage />}
             />
 
-           
+            <Route
+              path="/sensorDetail"
+              element={<SensorDetailPage />}
+            />
            
            
 
