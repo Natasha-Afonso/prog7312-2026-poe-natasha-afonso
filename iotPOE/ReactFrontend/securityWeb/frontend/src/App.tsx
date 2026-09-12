@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 
 import { SideBar } from "./components/SideBar";
@@ -12,13 +13,26 @@ import { TopBar } from "./components/TopBar";
 import { SensorDetailPage} from "./pages/SensorDetailPage";
 import { DashboardPage} from "./pages/Dashboard";
 import { HealthCheckPage } from "./pages/HealthCheckPage";
-
+import { AlertOverlay } from "./components/AlertOverlay";
+import { IncomingAlertToast } from "./components/IncomingAlertToast";
+import { AlertsHistoryPage } from "./pages/AlertsHistoryPage";
 import { Login } from "./pages/Login";
+import { AlertProvider, useAlert } from "./context/AlertContext";
 
 const AppContent: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isLoginPage = location.pathname === "/login";
+
+  
+  const {
+    activeAlert,
+    isOverlayOpen,
+    closeAlert,
+    incomingAlert,
+    openAlert,
+  } = useAlert();
  
   return (
     <div
@@ -59,7 +73,9 @@ const AppContent: React.FC = () => {
               element={<SensorDetailPage />}
             />
            
-           
+               
+               <Route path="/alerts" element={<AlertsHistoryPage />}   
+ />
 
             {/* Backend health */}
             <Route
@@ -83,6 +99,38 @@ const AppContent: React.FC = () => {
         </main>
 
       </div>
+        {/* Global Alerts & Toasts */}
+      {!isLoginPage && (
+        <>
+          <AlertOverlay
+            alert={activeAlert}
+            isOpen={isOverlayOpen}
+            onClose={closeAlert}
+            onAcknowledge={(id) => {
+              console.log("acknowledged", id);
+              closeAlert();
+            }}
+            onViewSensor={(sensorId) => {
+              closeAlert();
+              navigate(`/sensors/${sensorId}`);
+            }}
+            onViewAllAlerts={() => {
+              closeAlert();
+              navigate("/alerts");
+            }}
+          />
+
+          {incomingAlert && (
+            <IncomingAlertToast
+              visible={true}
+              sensorId={incomingAlert.sensorId}
+              message={incomingAlert.title}
+              onOpen={() => openAlert(incomingAlert)}
+            />
+          )}
+        </>
+      )}
+
     </div>
   );
 };
@@ -90,7 +138,9 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
+    <AlertProvider>
       <AppContent />
+      </AlertProvider>
     </BrowserRouter>
   );
 };

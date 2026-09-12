@@ -4,6 +4,8 @@ import { Glass } from "../components/Glass";
 import { MonitoringPanel } from "../components/MonitoringPanel";
 import { SensorTable } from "../components/SensorTable";
 import type { Sensor } from "../models/sensor";
+import type { SensorAlert } from "../models/alert.ts";
+import { useAlert } from "../context/AlertContext.tsx";
 
 const MOCK_SENSORS: Sensor[] = [
   { id: "SX-001", location: "Zone A", type: "Temperature", status: "active", lastReading: "27.4°C" },
@@ -12,9 +14,25 @@ const MOCK_SENSORS: Sensor[] = [
   { id: "SX-004", location: "Zone D", type: "Power", status: "active", lastReading: "12.1V" },
 ];
 
+
+
+const mockAlert: SensorAlert = {
+  id: "08-24-471",
+  sensorId: "SX-003",
+  location: "Zone C",
+  metric: "Temperature",
+  value: "38.7°C",
+  threshold: "35.0°C",
+  title: "TEMPERATURE THRESHOLD EXCEEDED",
+  message: "Sensor SX-003 has reported a temperature outside the configured safe operating range.",
+  timestamp: new Date().toLocaleString(),
+  status: "unread",
+};
+
 export const DashboardPage: React.FC = () => {
   const [systemTime, setSystemTime] = useState(new Date());
-
+// inside the component
+const { openAlert } = useAlert();
   useEffect(() => {
     const interval = setInterval(() => setSystemTime(new Date()), 1000);
     return () => clearInterval(interval);
@@ -67,7 +85,8 @@ export const DashboardPage: React.FC = () => {
       </Glass>
 
       <Glass className="card compact metric-card">
-        <div className="metric-content">
+        <div className="metric-content" onClick={() => openAlert(mockAlert)} style={{ cursor: "pointer" }}>
+
           <div>
             <div className="label">Open Alerts</div>
             <div className="value">03</div>
