@@ -28,46 +28,60 @@ export const SensorDetailPage: React.FC = () => {
 
   //Gareth, D. 2021 - lif
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isRunning) {
+    const interval = setInterval(async () => {
+      if (!isRunning || !sensorId) {
         return;
       }
-   // Abramov, D. 2019
-      const timestamp = new Date().toLocaleTimeString([], { hour12: false });
+      // Abramov, D. 2019
+      try {
+        const response = await fetch(`https://localhost:7123/api/Telemetry/${sensorId}`);
+        if (!response.ok) return;
 
-      const currentTemp = (
-        40 +
-        Math.sin(counterRef.current * 0.2) * 5 +
-        Math.random() * 1.5
-      ).toFixed(1);
+        const data = await response.json();
+        if (!data || data.length === 0) return;
 
-      const currentPressure = (
-        115 +
-        Math.cos(counterRef.current * 0.15) * 12 +
-        Math.random() * 3
-      ).toFixed(1);
+        // Take latest record from backend
+        const latest = data[0]; 
+        const timestamp = new Date(latest.timestamp || Date.now()).toLocaleTimeString([], { hour12: false });
 
-      const currentVoltage = (24.0 + (Math.random() - 0.5) * 0.1).toFixed(2);
+        let currentTemp = temp;
+        let currentPressure = pressure;
+        let currentVoltage = voltage;
 
-      counterRef.current += 1;
+        // Parse metrics dynamically based on backend MetricName
+        data.forEach((reading: any) => {
+          const metric = reading.metricName?.toLowerCase() || "";
+          if (metric.includes("temp") || reading.metricName === "Reading") {
+            currentTemp = Number(reading.value).toFixed(1);
+          } else if (metric.includes("pressure")) {
+            currentPressure = Number(reading.value).toFixed(1);
+          } else if (metric.includes("voltage")) {
+            currentVoltage = Number(reading.value).toFixed(2);
+          }
+        });
 
-      setTemp(currentTemp);
-      setPressure(currentPressure);
-      setVoltage(currentVoltage);
+        counterRef.current += 1;
 
-      // rolling window — drop the oldest point once we hit the cap
-      setLabels((prev) => [...prev, timestamp].slice(-MAX_DATA_POINTS));
-      setTempData((prev) => [...prev, Number(currentTemp)].slice(-MAX_DATA_POINTS));
-      setPressureData((prev) => [...prev, Number(currentPressure)].slice(-MAX_DATA_POINTS));
+        setTemp(currentTemp);
+        setPressure(currentPressure);
+        setVoltage(currentVoltage);
 
-      setLogEntries((prev) => [
-        ...prev,
-        { timestamp, temp: currentTemp, pressure: currentPressure, voltage: currentVoltage },
-      ]);
+        // rolling window — drop the oldest point once we hit the cap
+        setLabels((prev) => [...prev, timestamp].slice(-MAX_DATA_POINTS));
+        setTempData((prev) => [...prev, Number(currentTemp)].slice(-MAX_DATA_POINTS));
+        setPressureData((prev) => [...prev, Number(currentPressure)].slice(-MAX_DATA_POINTS));
+
+        setLogEntries((prev) => [
+          ...prev,
+          { timestamp, temp: currentTemp, pressure: currentPressure, voltage: currentVoltage },
+        ]);
+      } catch (err) {
+        console.error("Failed to poll telemetry:", err);
+      }
     }, 600);
 
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, sensorId, temp, pressure, voltage]);
 
   const handleClearLog = () => {
     setLogEntries([]);

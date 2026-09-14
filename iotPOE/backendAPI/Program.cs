@@ -20,7 +20,7 @@ namespace backendAPI
             {
                 options.AddPolicy(name: corsPolicyName, policy =>
                 {
-                    policy.WithOrigins("https://localhost:5170")
+                    policy.WithOrigins("https://localhost:8080")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();

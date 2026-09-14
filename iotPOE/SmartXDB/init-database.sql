@@ -18,7 +18,7 @@ CREATE TABLE DeploymentNodes (
         REFERENCES DeploymentNodes(Id)
 );
 
--- Create Sensors Table
+-- Create Sensors Table (Includes FilePath column)
 CREATE TABLE Sensors (
     Id INT PRIMARY KEY IDENTITY(1,1),
     DeviceIdentifier NVARCHAR(100) NOT NULL,
@@ -26,6 +26,7 @@ CREATE TABLE Sensors (
     DeploymentNodeId INT NOT NULL,
     Status NVARCHAR(50) NOT NULL,
     LastReading NVARCHAR(50) NULL,
+    FilePath NVARCHAR(255) NULL,
     RegisteredAt DATETIME NOT NULL DEFAULT GETUTCDATE(),
     CONSTRAINT FK_Sensors_DeploymentNode FOREIGN KEY (DeploymentNodeId)
         REFERENCES DeploymentNodes(Id)
@@ -65,12 +66,12 @@ VALUES
 ('Sub-Zone B', 2),
 ('Zone 2', 1);
 
--- Insert Dummy Sensors
-INSERT INTO Sensors (DeviceIdentifier, Category, DeploymentNodeId, Status, LastReading)
+-- Insert Dummy Sensors (Includes FilePath values)
+INSERT INTO Sensors (DeviceIdentifier, Category, DeploymentNodeId, Status, LastReading, FilePath)
 VALUES
-('AA:BB:CC:00:01', 'Environmental', 3, 'active', '27.4C'),
-('AA:BB:CC:00:02', 'Power Consumption', 4, 'active', '61.2W'),
-('AA:BB:CC:00:03', 'Environmental', 3, 'warning', '38.7C');
+('AA:BB:CC:00:01', 'Environmental', 3, 'active', '27.4C', 'uploads/temp_spec_001.pdf'),
+('AA:BB:CC:00:02', 'Power Consumption', 4, 'active', '61.2W', NULL),
+('AA:BB:CC:00:03', 'Environmental', 3, 'warning', '38.7C', 'uploads/temp_spec_003.pdf');
 
 -- Insert Dummy SensorReadings
 INSERT INTO SensorReadings (SensorId, MetricName, Value)

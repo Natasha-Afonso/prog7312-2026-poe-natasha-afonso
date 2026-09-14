@@ -1,9 +1,10 @@
 import type { Book } from "../models/book.ts";
+import type { SensorReading } from "../models/telemetry";
 
 
 import type { Sensor } from "../models/sensor.ts"; // Imports sensor interface
 
-const API_URL = "https://localhost:5170/api"; 
+const API_URL = "http://smart-backendapi:8080"; 
 
 
 // SENSOR API SERVICES
@@ -46,8 +47,15 @@ export async function deleteSensor(id: number): Promise<Sensor> {
   return response.json();
 }
 
-
-
+export const getTelemetryBySensorId = async (
+  sensorId: string | number
+): Promise<SensorReading[]> => {
+  const response = await fetch(`${API_URL}/Telemetry/${sensorId}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch telemetry for sensor ID: ${sensorId}`);
+  }
+  return response.json();
+};
 // this function will get ALL books from the API
 export async function getBooks(): Promise<Book[]> {
   // fetch(http://localhost:3000/api/books)
