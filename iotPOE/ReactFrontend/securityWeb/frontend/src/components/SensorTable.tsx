@@ -1,16 +1,14 @@
-// src/components/SensorTable.tsx
 import React from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
-import type { Sensor } from "../models/sensor";
+import type { Sensor } from "../models/sensor.ts";
 
 interface SensorTableProps {
   sensors: Sensor[];
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onView: (id: number) => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
 }
 
-//(glassDashboardAuthor,2026)
 export const SensorTable: React.FC<SensorTableProps> = ({
   sensors,
   onView,
@@ -22,13 +20,11 @@ export const SensorTable: React.FC<SensorTableProps> = ({
 
       <table>
 
-        {/* columns swapped from Timestamp/Speed/Plate/Severity to Smart-X sensor fields */}
-
         <thead>
           <tr>
-            <th>Sensor ID</th>
+            <th>Device Identifier</th>
             <th>Location</th>
-            <th>Type</th>
+            <th>Category</th>
             <th>Status</th>
             <th>Last Reading</th>
             <th className="actions-col">Actions</th>
@@ -40,18 +36,17 @@ export const SensorTable: React.FC<SensorTableProps> = ({
           {sensors.map((sensor) => (
             <tr key={sensor.id}>
 
-              <td>{sensor.id}</td>
-              <td>{sensor.location}</td>
-              <td>{sensor.type}</td>
+              <td>{sensor.deviceIdentifier}</td>
+              <td>{sensor.deploymentNode?.name ?? "—"}</td>
+              <td>{sensor.category}</td>
 
               <td>
-                {/* reusing the pen's severity-pill class, values changed to active/warning for sensor status */}
                 <span className={`severity-pill ${sensor.status}`}>
-                  {sensor.status === "active" ? "Active" : "Warning"}
+                  {sensor.status}
                 </span>
               </td>
 
-              <td>{sensor.lastReading}</td>
+              <td>{sensor.lastReading ?? "—"}</td>
 
               <td className="table-actions">
 
@@ -90,7 +85,3 @@ export const SensorTable: React.FC<SensorTableProps> = ({
 };
 
 export default SensorTable;
-
-{/*References
-  glassDashboardAuthor. 2026. <Pen title>. (Version X) [Source code] Available at: <URL> [Accessed DATE].
-  */}

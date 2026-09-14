@@ -89,7 +89,7 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
           <div>
             <h2 className="modal-title">Register Sensor</h2>
             <p className="modal-subtitle">
-              Configure device metadata and deploy to a target node
+              Add a sensor
             </p>
           </div>
           <button className="modal-close" onClick={onClose} type="button">
@@ -107,7 +107,7 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
                 type="text"
                 value={deviceIdentifier}
                 onChange={(e) => setDeviceIdentifier(e.target.value)}
-                placeholder="e.g. SENS-TEMP-001"
+                placeholder="e.g. SS:04"
                 required
               />
             </div>
@@ -160,7 +160,7 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label>Attachment File (Optional Spec Sheet)</label>
+              <label>Attachment File (Optional )</label>
               <input
                 type="file"
                 onChange={(e) => {

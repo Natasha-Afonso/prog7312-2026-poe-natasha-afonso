@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/mssql/server:2022-latest
 # Set environment variables
 ENV ACCEPT_EULA=Y 
 ENV MSSQL_PID=Express 
-ENV MSSQL_SA_PASSWORD=Password@1!
+ENV MSSQL_SA_PASSWORD=Password1!
 
 # Switch to root to ensure we can create directories
 USER root
@@ -26,10 +26,15 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
 # Start SQL Server and run the init script
 # Added -C to sqlcmd to handle SSL certificate trust in newer images
 CMD /bin/bash -c "/opt/mssql/bin/sqlservr & \
-  sleep 25 && \
-  if /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$MSSQL_SA_PASSWORD' -C -Q 'SELECT name FROM sys.databases WHERE name = \"SmartX\"' | grep -q SmartX; then \
-    echo 'Database already exists'; \
-  else \
-    echo 'Initializing database'; \
-    /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$MSSQL_SA_PASSWORD' -C -d master -i /app/init-scripts/init-database.sql; \
-  fi && wait"
+echo 'Waiting for SQL Server to be ready...' && \
+until /opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -P \"\$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' > /dev/null 2>&1; do \
+  sleep 2; \
+done; \
+echo 'SQL Server is ready.'; \
+if /opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -P \"\$MSSQL_SA_PASSWORD\" -C -Q 'SELECT name FROM sys.databases WHERE name = \"SmartXDB\"' | grep -q SmartXDB; then \
+  echo 'Database already exists'; \
+else \
+  echo 'Initializing database'; \
+  /opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -P \"\$MSSQL_SA_PASSWORD\" -C -d master -i /app/init-scripts/init-database.sql; \
+fi; \
+wait"

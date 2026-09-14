@@ -5,6 +5,9 @@ import { Glass } from "../components/Glass.tsx";
 import { TelemetryChart } from "../components/TelemetryChart.tsx";
 import { TelemetryLog } from "../components/TelemetryLog.tsx";
 import type { TelemetryLogLine } from "../models/telemetry.ts";
+import { getTelemetryBySensorId } from "../services/api.ts";
+
+
 
 const MAX_DATA_POINTS = 25;
 
@@ -34,14 +37,14 @@ export const SensorDetailPage: React.FC = () => {
       }
       // Abramov, D. 2019
       try {
-        const response = await fetch(`https://localhost:7123/api/Telemetry/${sensorId}`);
-        if (!response.ok) return;
-
-        const data = await response.json();
+        // FIXED: was calling fetch("https://localhost:7123/api/Telemetry/...")
+        // directly with a hardcoded, wrong port — now goes through api.ts
+        // so it points at the real running backend
+        const data = await getTelemetryBySensorId(sensorId);
         if (!data || data.length === 0) return;
 
         // Take latest record from backend
-        const latest = data[0]; 
+        const latest = data[0];
         const timestamp = new Date(latest.timestamp || Date.now()).toLocaleTimeString([], { hour12: false });
 
         let currentTemp = temp;
@@ -49,7 +52,7 @@ export const SensorDetailPage: React.FC = () => {
         let currentVoltage = voltage;
 
         // Parse metrics dynamically based on backend MetricName
-        data.forEach((reading: any) => {
+        data.forEach((reading) => {
           const metric = reading.metricName?.toLowerCase() || "";
           if (metric.includes("temp") || reading.metricName === "Reading") {
             currentTemp = Number(reading.value).toFixed(1);

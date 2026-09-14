@@ -1,13 +1,13 @@
  USE master;
 GO
 -- Create the SmartX database only if it does not already exist
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'SmartX')
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'SmartXDB')
 BEGIN
-    CREATE DATABASE SmartX;
+    CREATE DATABASE SmartXDB;
 END
 GO
 -- Switch to the SmartX database
-USE SmartX;
+USE SmartXDB;
 GO
 -- Create DeploymentNodes Table 
 CREATE TABLE DeploymentNodes (
@@ -69,9 +69,9 @@ VALUES
 -- Insert Dummy Sensors (Includes FilePath values)
 INSERT INTO Sensors (DeviceIdentifier, Category, DeploymentNodeId, Status, LastReading, FilePath)
 VALUES
-('AA:BB:CC:00:01', 'Environmental', 3, 'active', '27.4C', 'uploads/temp_spec_001.pdf'),
-('AA:BB:CC:00:02', 'Power Consumption', 4, 'active', '61.2W', NULL),
-('AA:BB:CC:00:03', 'Environmental', 3, 'warning', '38.7C', 'uploads/temp_spec_003.pdf');
+('SS:01', 'Environmental', 3, 'active', '27.4C', 'uploads/temp_spec_001.pdf'),
+('SS:02', 'Power Consumption', 4, 'active', '61.2W', NULL),
+('SS:03', 'Environmental', 3, 'warning', '38.7C', 'uploads/temp_spec_003.pdf');
 
 -- Insert Dummy SensorReadings
 INSERT INTO SensorReadings (SensorId, MetricName, Value)

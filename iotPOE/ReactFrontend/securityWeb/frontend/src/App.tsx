@@ -16,8 +16,10 @@ import { HealthCheckPage } from "./pages/HealthCheckPage";
 import { AlertOverlay } from "./components/AlertOverlay";
 import { IncomingAlertToast } from "./components/IncomingAlertToast";
 import { AlertsHistoryPage } from "./pages/AlertsHistoryPage";
-import { Login } from "./pages/Login";
+import { LandingPage } from "./pages/LandingPage.tsx";
 import { AlertProvider, useAlert } from "./context/AlertContext";
+import { acknowledgeAlert } from "./services/api.ts";
+
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -58,8 +60,8 @@ const AppContent: React.FC = () => {
 
             {/* Login */}
             <Route
-              path="/login"
-              element={<Login />}
+              path="/landing"
+              element={<LandingPage />}
             />
 
             {/* Dashboard */}
@@ -69,7 +71,7 @@ const AppContent: React.FC = () => {
             />
 
             <Route
-              path="/sensorDetail"
+              path="/sensorDetail/:id"
               element={<SensorDetailPage />}
             />
            
@@ -107,7 +109,9 @@ const AppContent: React.FC = () => {
             isOpen={isOverlayOpen}
             onClose={closeAlert}
             onAcknowledge={(id) => {
-              console.log("acknowledged", id);
+             acknowledgeAlert(Number(id)).catch((err) =>
+            console.error("Failed to acknowledge alert:", err)
+            );
               closeAlert();
             }}
             onViewSensor={(sensorId) => {

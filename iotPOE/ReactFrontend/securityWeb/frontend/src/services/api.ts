@@ -1,10 +1,10 @@
 import type { Book } from "../models/book.ts";
 import type { SensorReading } from "../models/telemetry";
-
+import type { AlertDto } from "../models/alert.ts";
 
 import type { Sensor } from "../models/sensor.ts"; // Imports sensor interface
 
-const API_URL = "http://smart-backendapi:8080"; 
+const API_URL = "http://localhost:8080/api"; 
 
 
 // SENSOR API SERVICES
@@ -56,6 +56,28 @@ export const getTelemetryBySensorId = async (
   }
   return response.json();
 };
+
+// ALERTS API SERVICES
+
+export async function getAlerts(): Promise<AlertDto[]> {
+  const response = await fetch(`${API_URL}/Alerts`);
+  if (!response.ok) throw new Error("Failed to fetch alerts");
+  return response.json();
+}
+
+export async function acknowledgeAlert(id: number): Promise<void> {
+  const getResponse = await fetch(`${API_URL}/Alerts/${id}`);
+  if (!getResponse.ok) throw new Error("Failed to fetch alert before acknowledging");
+  const alert = await getResponse.json();
+
+  const putResponse = await fetch(`${API_URL}/Alerts/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...alert, status: "acknowledged" }),
+  });
+
+  if (!putResponse.ok) throw new Error("Failed to acknowledge alert");
+}
 // this function will get ALL books from the API
 export async function getBooks(): Promise<Book[]> {
   // fetch(http://localhost:3000/api/books)

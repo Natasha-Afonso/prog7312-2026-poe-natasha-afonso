@@ -1,59 +1,86 @@
 import React, { useState, useEffect } from "react";
 import { Clock, Radio, Wifi, AlertTriangle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Glass } from "../components/Glass";
 import { MonitoringPanel } from "../components/MonitoringPanel";
 import { SensorTable } from "../components/SensorTable";
+import { RegisterSensorModal } from "../components/RegisterPage.tsx";
+import { getSensors, deleteSensor, getAlerts } from "../services/api.ts";
+import { mapAlertDto } from "../models/alert.ts";
 import type { Sensor } from "../models/sensor";
 import type { SensorAlert } from "../models/alert.ts";
 import { useAlert } from "../context/AlertContext.tsx";
-import { RegisterSensorModal } from "../components/RegisterPage.tsx";
-
-
-const MOCK_SENSORS: Sensor[] = [
-  { id: "SX-001", location: "Zone A", type: "Temperature", status: "active", lastReading: "27.4°C" },
-  { id: "SX-002", location: "Zone B", type: "Humidity", status: "active", lastReading: "61.2%" },
-  { id: "SX-003", location: "Zone C", type: "Environmental", status: "warning", lastReading: "38.7°C" },
-  { id: "SX-004", location: "Zone D", type: "Power", status: "active", lastReading: "12.1V" },
-];
-
-
-
-const mockAlert: SensorAlert = {
-  id: "08-24-471",
-  sensorId: "SX-003",
-  location: "Zone C",
-  metric: "Temperature",
-  value: "38.7°C",
-  threshold: "35.0°C",
-  title: "TEMPERATURE THRESHOLD EXCEEDED",
-  message: "Sensor SX-003 has reported a temperature outside the configured safe operating range.",
-  timestamp: new Date().toLocaleString(),
-  status: "unread",
-};
 
 export const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { openAlert, triggerIncomingAlert } = useAlert();
 
-  // State to control overlay visibility
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [systemTime, setSystemTime] = useState(new Date());
+  const [sensors, setSensors] = useState<Sensor[]>([]);
+  const [alerts, setAlerts] = useState<SensorAlert[]>([]);
 
-  // Callback when new sensor is successfully in the backend
-  const handleSensorRegistered = (newSensor: Sensor) => {
-    // Optional: Refresh your existing dashboard data list here
-    console.log("Newly registered sensor:", newSensor);
+  const loadSensors = () => {
+    getSensors()
+      .then(setSensors)
+      .catch((err) => console.error("Failed to load sensors:", err));
   };
 
+  const loadAlerts = () => {
+    getAlerts()
+      .then((dtos) => {
+        const mapped = dtos.map(mapAlertDto);
+        setAlerts(mapped);
+        return mapped;
+      })
+      .catch((err) => console.error("Failed to load alerts:", err));
+  };
 
-  const [systemTime, setSystemTime] = useState(new Date());
-// inside the component
-const { openAlert } = useAlert();
+  useEffect(() => {
+    loadSensors();
+    loadAlerts();
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => setSystemTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleView = (id: string) => console.log("view", id);
-  const handleEdit = (id: string) => console.log("edit", id);
-  const handleDelete = (id: string) => console.log("delete", id);
+  // fires an incoming toast for the first unread alert, once alerts
+  // have loaded — replaces the old mock timer
+  useEffect(() => {
+    const unread = alerts.find((a) => a.status === "unread");
+    if (unread) {
+      const timer = setTimeout(() => triggerIncomingAlert(unread), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [alerts]);
+
+  const unreadCount = alerts.filter((a) => a.status === "unread").length;
+
+  const handleOpenAlertsCard = () => {
+    const unread = alerts.find((a) => a.status === "unread");
+    if (unread) {
+      openAlert(unread);
+    } else {
+      navigate("/alerts");
+    }
+  };
+
+  const handleSensorRegistered = () => {
+    loadSensors();
+  };
+
+  const handleView = (id: number) => navigate(`/sensors/${id}`);
+  const handleEdit = (id: number) => console.log("edit", id);
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteSensor(id);
+      loadSensors();
+    } catch (err) {
+      console.error("Failed to delete sensor:", err);
+    }
+  };
 
   return (
     <div className="content">
@@ -75,7 +102,7 @@ const { openAlert } = useAlert();
         <div className="metric-content">
           <div>
             <div className="label">Sensor Nodes</div>
-            <div className="value">24 Online</div>
+            <div className="value">{sensors.length} Registered</div>
           </div>
 
           <div className="metric-icon-wrapper" style={{ "--iconColor": "#1fd1b2" } as React.CSSProperties}>
@@ -98,11 +125,11 @@ const { openAlert } = useAlert();
       </Glass>
 
       <Glass className="card compact metric-card">
-        <div className="metric-content" onClick={() => openAlert(mockAlert)} style={{ cursor: "pointer" }}>
+        <div className="metric-content" onClick={handleOpenAlertsCard} style={{ cursor: "pointer" }}>
 
           <div>
             <div className="label">Open Alerts</div>
-            <div className="value">03</div>
+            <div className="value">{unreadCount.toString().padStart(2, "0")}</div>
           </div>
 
           <div className="metric-icon-wrapper" style={{ "--iconColor": "#ff9f43" } as React.CSSProperties}>
@@ -111,7 +138,7 @@ const { openAlert } = useAlert();
         </div>
       </Glass>
 
-      <MonitoringPanel nodesOnline={24} />
+      <MonitoringPanel nodesOnline={sensors.length} />
 
       <Glass className="card wide">
 
@@ -121,18 +148,20 @@ const { openAlert } = useAlert();
         </div>
 
         <SensorTable
-          sensors={MOCK_SENSORS}
+          sensors={sensors}
           onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
 
       </Glass>
-  <RegisterSensorModal
+
+      <RegisterSensorModal
         isOpen={isRegisterModalOpen}
         onClose={() => setIsRegisterModalOpen(false)}
         onSensorRegistered={handleSensorRegistered}
       />
+
     </div>
   );
 };

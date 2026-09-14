@@ -1,9 +1,17 @@
+export interface DeploymentNode {
+  id: number;
+  name: string;
+  parentId: number | null;
+}
+
 export interface Sensor {
-  id: string;
-  location: string;
-  type: string;
-  status: "active" | "warning";
-  lastReading: string;
+  id: number;
+  deviceIdentifier: string;
+  category: string;
+  deploymentNodeId: number;
+  deploymentNode?: DeploymentNode;
+  status: string;
+  lastReading?: string;
   filePath?: string;
   registeredAt?: string;
 }

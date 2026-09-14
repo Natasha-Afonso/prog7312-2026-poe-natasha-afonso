@@ -138,7 +138,7 @@ export const AlertOverlay: React.FC<AlertOverlayProps> = ({
     setTimeout(() => setConfirmMessage(null), 3200);
 
     if (action === "view" && alert) {
-      onViewSensor(alert.sensorId);
+       onViewSensor(alert.sensorNumericId.toString());
     }
 
     if (action === "acknowledge" && alert) {
