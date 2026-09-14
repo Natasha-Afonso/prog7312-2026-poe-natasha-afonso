@@ -1,0 +1,54 @@
+services:
+  smart-db-service:
+    build:
+      context: .
+      dockerfile: ./SmartXDB/Dockerfile
+    container_name: smart-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Password1!"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - smart_db_data:/var/opt/mssql
+    restart: unless-stopped
+    networks:
+      - smart-network
+
+  frontend-service:
+      build:
+        context: .
+        dockerfile: ./ReactFrontend/securityWeb/frontend/Dockerfile           
+      container_name: smart-frontend
+      ports:
+        - "8081:8080"                             # <-- Droplet port 80 routes to container 8080
+      depends_on:
+        - backendapi-service
+      restart: unless-stopped
+      networks:
+        - smart-network 
+
+  backendapi-service:
+    build:
+      context: .
+      dockerfile: ./backendAPI/Dockerfile
+    container_name: smart-backendapi
+    environment:
+      - SQL_CONNECTION_STRING=Server=smart-db;Database=SmartXDB;Trusted_Connection=false;MultipleActiveResultSets=true;Encrypt=false;user id=sa;password=Password1!
+      - ASPNETCORE_URLS=http://0.0.0.0:8080  # <-- FORCES C# TO LISTEN ON 8080 INTERNALLY
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "8080:8080"
+    depends_on:
+      - smart-db-service
+    restart: unless-stopped
+    networks:
+      - smart-network
+
+networks:
+  smart-network:
+    driver: bridge
+
+volumes:
+  smart_db_data:

@@ -11,7 +11,7 @@ USER root
 RUN mkdir -p /app/init-scripts && chown mssql /app/init-scripts
 
 # Copy the initialization script (Must be in the same folder as this Dockerfile)
-COPY ./MedicDB/init-database.sql /app/init-scripts/
+COPY ./SmartXDB/init-database.sql /app/init-scripts/
 
 # Ensure mssql-tools are in the PATH
 ENV PATH="$PATH:/opt/mssql-tools18/bin"
@@ -27,7 +27,7 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
 # Added -C to sqlcmd to handle SSL certificate trust in newer images
 CMD /bin/bash -c "/opt/mssql/bin/sqlservr & \
   sleep 25 && \
-  if /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$MSSQL_SA_PASSWORD' -C -Q 'SELECT name FROM sys.databases WHERE name = \"Medic\"' | grep -q Medic; then \
+  if /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$MSSQL_SA_PASSWORD' -C -Q 'SELECT name FROM sys.databases WHERE name = \"SmartX\"' | grep -q SmartX; then \
     echo 'Database already exists'; \
   else \
     echo 'Initializing database'; \
