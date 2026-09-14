@@ -17,6 +17,7 @@ namespace backendAPI.Models
         public string Status { get; set; }
         public string? LastReading { get; set; }
 
+        public string FilePath {get; set;}
         public DateTime RegisteredAt { get; set; } = DateTime.UtcNow;
     }
 }

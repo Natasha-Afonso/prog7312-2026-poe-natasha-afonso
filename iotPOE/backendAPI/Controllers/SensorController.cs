@@ -13,11 +13,13 @@ namespace backendAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly DeploymentTreeService _deploymentTreeService;
+     private readonly IWebHostEnvironment _env;
 
-        public SensorsController(ApplicationDbContext context, DeploymentTreeService deploymentTreeService)
+        public SensorsController(ApplicationDbContext context, DeploymentTreeService deploymentTreeService,  IWebHostEnvironment env)
         {
             _context = context;
             _deploymentTreeService = deploymentTreeService;
+             _env = env;
         }
 
         // GET: api/Sensors
@@ -43,33 +45,47 @@ namespace backendAPI.Controllers
             return sensor;
         }
 
-        // POST: api/Sensors
-        [HttpPost]
-        public async Task<ActionResult<Sensor>> Create(Sensor sensor)
+       // POST: api/Sensors
+[HttpPost]
+public async Task<ActionResult<Sensor>> Create([FromForm] Sensor sensor, IFormFile? attachment)
+{
+    var deploymentNode = await _context.DeploymentNodes
+        .Include(n => n.Children)
+        .FirstOrDefaultAsync(n => n.Id == sensor.DeploymentNodeId);
+
+    if (deploymentNode == null)
+        return BadRequest("The specified deployment location does not exist");
+
+    var rootNode = await GetRootNode(deploymentNode);
+    bool isValid = _deploymentTreeService.ValidateDeploymentPath(rootNode, deploymentNode.Name, "", out string fullPath);
+
+    if (!isValid)
+        return BadRequest("The deployment location could not be validated against the facility tree");
+
+    if (attachment != null && attachment.Length > 0)
+    {
+        var uploadsFolder = Path.Combine(_env.ContentRootPath, "Uploads", "Sensors");
+        if (!Directory.Exists(uploadsFolder))
+            Directory.CreateDirectory(uploadsFolder);
+
+        // same collision-safe naming as the reference project
+        var fileName = Guid.NewGuid().ToString() + "_" + attachment.FileName;
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
         {
-            var deploymentNode = await _context.DeploymentNodes
-                .Include(n => n.Children)
-                .FirstOrDefaultAsync(n => n.Id == sensor.DeploymentNodeId);
-
-            if (deploymentNode == null)
-            {
-                return BadRequest("The specified deployment location does not exist");
-            }
-
-            var rootNode = await GetRootNode(deploymentNode);
-            bool isValid = _deploymentTreeService.ValidateDeploymentPath(rootNode, deploymentNode.Name, "", out string fullPath);
-
-            if (!isValid)
-            {
-                return BadRequest("The deployment location could not be validated against the facility tree");
-            }
-
-            sensor.RegisteredAt = DateTime.UtcNow;
-            _context.Sensors.Add(sensor);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = sensor.Id }, sensor);
+            await attachment.CopyToAsync(stream);
         }
+
+        sensor.FilePath = "/Uploads/Sensors/" + fileName;
+    }
+
+    sensor.RegisteredAt = DateTime.UtcNow;
+    _context.Sensors.Add(sensor);
+    await _context.SaveChangesAsync();
+
+    return CreatedAtAction(nameof(GetById), new { id = sensor.Id }, sensor);
+}
 
         // PUT: api/Sensors/5
         [HttpPut("{id}")]

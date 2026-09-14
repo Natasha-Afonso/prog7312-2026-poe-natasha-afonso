@@ -11,6 +11,23 @@ namespace backendAPI
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+         
+          // Define CORS policy name
+            var corsPolicyName = "AllowReactApp";
+
+            // Add services to the container.
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(name: corsPolicyName, policy =>
+                {
+                    policy.WithOrigins("https://localhost:5170")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
+
+
 
             // Add services to the container.
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -44,6 +61,8 @@ namespace backendAPI
             }
 
             app.UseHttpsRedirection();
+             // Enable CORS middleware (Must be between UseHttpsRedirection and UseAuthorization)
+            app.UseCors(corsPolicyName);
             app.UseAuthorization();
             app.MapControllers();
             app.Run();
