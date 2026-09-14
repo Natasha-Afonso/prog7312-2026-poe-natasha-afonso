@@ -41,6 +41,20 @@ CREATE TABLE SensorReadings (
     CONSTRAINT FK_SensorReadings_Sensor FOREIGN KEY (SensorId)
         REFERENCES Sensors(Id)
 );
+
+CREATE TABLE Alerts (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    SensorId INT NOT NULL,
+    Title NVARCHAR(200) NOT NULL,
+    Message NVARCHAR(MAX) NOT NULL,
+    Metric NVARCHAR(100) NOT NULL,
+    Value NVARCHAR(50) NOT NULL,
+    Threshold NVARCHAR(50) NOT NULL,
+    Status NVARCHAR(50) NOT NULL DEFAULT 'unread',
+    Timestamp DATETIME NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT FK_Alerts_Sensor FOREIGN KEY (SensorId)
+        REFERENCES Sensors(Id)
+);
 GO
 
 -- Insert Dummy DeploymentNodes (Facility -> Zone -> Sub-Zone)
@@ -64,4 +78,8 @@ VALUES
 (1, 'Temperature', 27.4),
 (2, 'Wattage', 61.2),
 (3, 'Temperature', 38.7);
+
+INSERT INTO Alerts (SensorId, Title, Message, Metric, Value, Threshold, Status)
+VALUES
+(3, 'TEMPERATURE THRESHOLD EXCEEDED', 'Sensor has reported a temperature outside the configured safe operating range.', 'Temperature', '38.7C', '35.0C', 'unread');
 GO

@@ -8,6 +8,7 @@ namespace backendAPI.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
         public DbSet<Sensor> Sensors { get; set; }
+        public DbSet<Alert> Alerts { get; set; }
         public DbSet<DeploymentNode> DeploymentNodes { get; set; }
         public DbSet<SensorReading> SensorReadings { get; set; }
     }
