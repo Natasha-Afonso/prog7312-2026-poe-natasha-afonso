@@ -16,7 +16,6 @@ import { HealthCheckPage } from "./pages/HealthCheckPage";
 import { AlertOverlay } from "./components/AlertOverlay";
 import { IncomingAlertToast } from "./components/IncomingAlertToast";
 import { AlertsHistoryPage } from "./pages/AlertsHistoryPage";
-import { LandingPage } from "./pages/LandingPage.tsx";
 import { AlertProvider, useAlert } from "./context/AlertContext";
 import { acknowledgeAlert } from "./services/api.ts";
 
@@ -25,7 +24,7 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isLoginPage = location.pathname === "/login";
+  const isLoginPage = location.pathname === "/landing";
 
   
   const {
@@ -60,8 +59,8 @@ const AppContent: React.FC = () => {
 
             {/* Login */}
             <Route
-              path="/landing"
-              element={<LandingPage />}
+              path="/"
+              element={<Navigate to="/landing" replace />}
             />
 
             {/* Dashboard */}
