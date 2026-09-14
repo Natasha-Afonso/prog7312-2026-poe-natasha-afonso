@@ -28,7 +28,6 @@ namespace backendAPI
             });
 
 
-
             // Add services to the container.
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Environment.GetEnvironmentVariable("SQL_CONNECTION_STRING")));
@@ -59,7 +58,7 @@ namespace backendAPI
                     options.RoutePrefix = "swagger";
                 });
             }
-
+//(Rudman,2026)
             app.UseHttpsRedirection();
              // Enable CORS middleware (Must be between UseHttpsRedirection and UseAuthorization)
             app.UseCors(corsPolicyName);
@@ -69,3 +68,8 @@ namespace backendAPI
         }
     }
 }
+
+/** 
+References
+Rudman, G., 2026. insy7314-library. (Version 1.0) [Source Code] Available at: < https://github.com/rudderz243/insy7314-library > [Accessed 29 August 2026]
+*/

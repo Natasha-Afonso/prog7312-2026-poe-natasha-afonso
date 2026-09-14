@@ -261,5 +261,10 @@ class SoundEngineClass {
   }
 }
 
-// Singleton export (holoMailAuthor, 2026)
+// Singleton export (EYAL KRIEF and Public, 2026)
 export const SoundEngine = new SoundEngineClass();
+
+{/*References
+  EYAL KRIEF and Public, 2026. HOLO//MAIL. (Version 10) [Source Code] CodePen. Available at: https://codepen.io/editor/klippo/pen/01a030e2-d420-74ab-8e67-6939f4ffdb42 [Accessed 12 September 2026].
+  Mozilla Develepment Network,2019. Web Audio API. (Version 10) [Source Code]  Available at: https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API [Accessed 12 September 2026].
+  */}

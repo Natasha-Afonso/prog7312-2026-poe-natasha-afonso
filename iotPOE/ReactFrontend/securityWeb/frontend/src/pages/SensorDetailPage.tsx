@@ -11,7 +11,7 @@ import { getTelemetryBySensorId } from "../services/api.ts";
 
 const MAX_DATA_POINTS = 25;
 
-//(telemetryPanelAuthor,2026)
+//(Gosavi,2026)
 export const SensorDetailPage: React.FC = () => {
   const { sensorId } = useParams<{ sensorId: string }>();
 

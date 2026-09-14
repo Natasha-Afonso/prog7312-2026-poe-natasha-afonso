@@ -5,7 +5,7 @@ interface MonitoringPanelProps {
   nodesOnline: number;
 }
 
-//(holoMailAuthor,2026)
+
 export const MonitoringPanel: React.FC<MonitoringPanelProps> = ({ nodesOnline }) => {
 
   // not from either pen — swapped for a live last-sync readout
@@ -57,6 +57,3 @@ export const MonitoringPanel: React.FC<MonitoringPanelProps> = ({ nodesOnline })
 
 export default MonitoringPanel;
 
-{/*References
-  holoMailAuthor. 2026. <Pen title>. (Version X) [Source code] Available at: <URL> [Accessed DATE].
-  */}

@@ -7,7 +7,7 @@ interface TelemetryChartProps {
   pressureData: number[];
 }
 
-//(telemetryPanelAuthor,2026)
+//(Gosavi,2026)
 export const TelemetryChart: React.FC<TelemetryChartProps> = ({
   labels,
   tempData,

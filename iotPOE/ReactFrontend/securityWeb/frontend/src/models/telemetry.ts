@@ -12,3 +12,8 @@ export interface TelemetryLogLine {
   pressure: string;
   voltage: string;
 }
+
+/** 
+References
+Rudman, G., 2026. insy7314-library. (Version 1.0) [Source Code] Available at: < https://github.com/rudderz243/insy7314-library > [Accessed 29 August 2026]
+*/

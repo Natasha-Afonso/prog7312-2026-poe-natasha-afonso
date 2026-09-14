@@ -16,7 +16,7 @@ namespace backendAPI.Controllers
         {
             _context = context;
         }
-
+      //(CodeWithGopi, 2025)
         // GET: api/Alerts
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Alert>>> GetAll()
@@ -60,7 +60,7 @@ namespace backendAPI.Controllers
         }
 
         // PUT: api/Alerts/5
-        // also used to acknowledge/resolve an alert by updating its Status
+        // used to resolve and acknoledge an alert by updating its Status
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Alert alert)
         {
@@ -115,3 +115,12 @@ namespace backendAPI.Controllers
         }
     }
 }
+/** 
+References
+CodeWithGopi. 2025. Create and Consume Web API in ASP.NET Core MVC | Full CRUD Operatins & API Consumption. (Version 10.0) [Source Code]. Available at:<https://youtu.be/knTcwvFWOQM?si=b3q3ksLg6HNnBjDg> [Accessed 4 June 2026]
+Emeris School of Computer Science. 2025. PROG7311 Docker part 1 - Getting started. (Version 10.0) [Source Code]. Available at: <https://youtu.be/ldfC-rTzHPY?si=znsmPz-ZSPaY-4Ii> [Accessed 5 June 2026]
+Emeris School of Computer Science. 2025. PROG7311 Docker part 2- connecting between the two!. (Version 10.0) [Source Code]. Available at: <https://youtu.be/_0EhC3WauAc?si=nEazkCpBTV1YpHBp> [Accessed 5 June 2026]
+Emeris School of Computer Science. 2025. PROG7311 Docker part 3- databases in docker. (Version 10.0) [Source Code]. Available at: <https://youtu.be/6tYEbngWY-E?si=10rSEEpfSNL5Kg8k> [Accessed 5 June 2026]
+Emeris School of Computer Science. 2025. PROG7311 Docker part 4- connecting to database from the API.(Version 10.0) [Source Code]. Available at: <https://youtu.be/_PwpPMoeqzw?si=Q0ELlPZdN42dFU9q> [Accessed 5 June 2026]
+Emeris School of Computer Science. 2025. PROG7311 Docker part 5- connecting them all together- DB -API -MVC. (Version 10.0) [Source Code]. Available at: <https://youtu.be/YlIajRMdLPk?si=D75XZKO-L6nQhR-3> [Accessed 5 June 2026]
+*/
