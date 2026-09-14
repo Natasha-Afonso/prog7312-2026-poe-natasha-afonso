@@ -6,6 +6,8 @@ import { SensorTable } from "../components/SensorTable";
 import type { Sensor } from "../models/sensor";
 import type { SensorAlert } from "../models/alert.ts";
 import { useAlert } from "../context/AlertContext.tsx";
+import { RegisterSensorModal } from "../components/RegisterPage.tsx";
+
 
 const MOCK_SENSORS: Sensor[] = [
   { id: "SX-001", location: "Zone A", type: "Temperature", status: "active", lastReading: "27.4°C" },
@@ -30,6 +32,17 @@ const mockAlert: SensorAlert = {
 };
 
 export const DashboardPage: React.FC = () => {
+
+  // State to control overlay visibility
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
+  // Callback when new sensor is successfully in the backend
+  const handleSensorRegistered = (newSensor: Sensor) => {
+    // Optional: Refresh your existing dashboard data list here
+    console.log("Newly registered sensor:", newSensor);
+  };
+
+
   const [systemTime, setSystemTime] = useState(new Date());
 // inside the component
 const { openAlert } = useAlert();
@@ -104,7 +117,7 @@ const { openAlert } = useAlert();
 
         <div className="table-header">
           <div className="label">Sensor Data Ingestion</div>
-          <button className="btn-primary">+ Register Sensor</button>
+          <button className="btn-primary" onClick={() => setIsRegisterModalOpen(true)}>+ Register Sensor</button>
         </div>
 
         <SensorTable
@@ -115,7 +128,11 @@ const { openAlert } = useAlert();
         />
 
       </Glass>
-
+  <RegisterSensorModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSensorRegistered={handleSensorRegistered}
+      />
     </div>
   );
 };

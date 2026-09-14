@@ -1,6 +1,52 @@
 import type { Book } from "../models/book.ts";
 
-const API_URL = "https://localhost:3000/api";
+
+import type { Sensor } from "../models/sensor.ts"; // Imports sensor interface
+
+const API_URL = "https://localhost:5170/api"; 
+
+
+// SENSOR API SERVICES
+
+// GET ALL SENSORS
+export async function getSensors(): Promise<Sensor[]> {
+  const response = await fetch(`${API_URL}/Sensors`);
+  if (!response.ok) throw new Error("Failed to fetch sensors");
+  return response.json();
+}
+
+// GET SINGLE SENSOR BY ID
+export async function getSensor(id: number): Promise<Sensor> {
+  const response = await fetch(`${API_URL}/Sensors/${id}`);
+  if (!response.ok) throw new Error("Failed to fetch sensor details");
+  return response.json();
+}
+
+// CREATE NEW SENSOR 
+export async function createSensor(formData: FormData): Promise<Sensor> {
+  const response = await fetch(`${API_URL}/Sensors`, {
+    method: "POST",
+    body: formData, // Browser automatically sets boundary header
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to register sensor");
+  }
+
+  return response.json();
+}
+
+// DELETE SENSOR
+export async function deleteSensor(id: number): Promise<Sensor> {
+  const response = await fetch(`${API_URL}/Sensors/${id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) throw new Error("Failed to delete sensor");
+  return response.json();
+}
+
+
 
 // this function will get ALL books from the API
 export async function getBooks(): Promise<Book[]> {

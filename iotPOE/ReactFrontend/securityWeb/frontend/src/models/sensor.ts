@@ -4,4 +4,6 @@ export interface Sensor {
   type: string;
   status: "active" | "warning";
   lastReading: string;
+  filePath?: string;
+  registeredAt?: string;
 }
