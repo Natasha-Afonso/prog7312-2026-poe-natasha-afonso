@@ -1,5 +1,5 @@
 ## How to run the App 💻
-### Backend 🔙🔚
+### Terminal🔙🔚
 To run the backend application, follow the following steps:  
 
 **Step 1:** Open terminal and navigate to 'cd iotPOE'<br>
