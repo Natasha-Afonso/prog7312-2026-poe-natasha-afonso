@@ -2,6 +2,8 @@
 
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+#the uploads folder is root,then it will be given to the app user
+RUN mkdir -p /app/Uploads && chown $APP_UID /app/Uploads
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080

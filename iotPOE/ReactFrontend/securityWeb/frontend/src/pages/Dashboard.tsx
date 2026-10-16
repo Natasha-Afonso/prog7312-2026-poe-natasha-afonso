@@ -10,15 +10,16 @@ import { mapAlertDto } from "../models/alert.ts";
 import type { Sensor } from "../models/sensor";
 import type { SensorAlert } from "../models/alert.ts";
 import { useAlert } from "../context/AlertContext.tsx";
+import { IngestBatchModal } from "../components/IngestBatchModal";
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { openAlert, triggerIncomingAlert } = useAlert();
-
+    const { openAlert } =useAlert();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [systemTime, setSystemTime] = useState(new Date());
   const [sensors, setSensors] = useState<Sensor[]>([]);
   const [alerts, setAlerts] = useState<SensorAlert[]>([]);
+  const [isIngestOpen, setIsIngestOpen] = useState(false);
 
   const loadSensors = () => {
     getSensors()
@@ -46,15 +47,16 @@ export const DashboardPage: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // fires an incoming toast for the first unread alert, once alerts
-  // have loaded — replaces the old mock timer
+  // refresh sensors and alerts every 5 seconds so new readings and alerts show up without a page reload
   useEffect(() => {
-    const unread = alerts.find((a) => a.status === "unread");
-    if (unread) {
-      const timer = setTimeout(() => triggerIncomingAlert(unread), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [alerts]);
+    const interval = setInterval(() => {
+      loadSensors();
+      loadAlerts();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+
 
   const unreadCount = alerts.filter((a) => a.status === "unread").length;
 
@@ -71,7 +73,7 @@ export const DashboardPage: React.FC = () => {
     loadSensors();
   };
 
-  const handleView = (id: number) => navigate(`/sensors/${id}`);
+  const handleView = (id: number) => navigate(`/sensorDetail/${id}`);
   const handleEdit = (id: number) => console.log("edit", id);
   const handleDelete = async (id: number) => {
     try {
@@ -81,6 +83,8 @@ export const DashboardPage: React.FC = () => {
       console.error("Failed to delete sensor:", err);
     }
   };
+
+
 
   return (
     <div className="content">
@@ -144,6 +148,7 @@ export const DashboardPage: React.FC = () => {
 
         <div className="table-header">
           <div className="label">Sensor Data Ingestion</div>
+          <button className="btn-secondary" onClick={() => setIsIngestOpen(true)}>Send Telemetry Batch</button>
           <button className="btn-primary" onClick={() => setIsRegisterModalOpen(true)}>+ Register Sensor</button>
         </div>
 
@@ -161,6 +166,12 @@ export const DashboardPage: React.FC = () => {
         onClose={() => setIsRegisterModalOpen(false)}
         onSensorRegistered={handleSensorRegistered}
       />
+
+        <IngestBatchModal
+  isOpen={isIngestOpen}
+  onClose={() => setIsIngestOpen(false)}
+  onIngested={() => { loadSensors(); loadAlerts(); }}
+/>
 
     </div>
   );

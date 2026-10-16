@@ -13,7 +13,7 @@ const MAX_DATA_POINTS = 25;
 
 //(Gosavi,2026)
 export const SensorDetailPage: React.FC = () => {
-  const { sensorId } = useParams<{ sensorId: string }>();
+  const { id: sensorId } = useParams<{ id: string }>();
 
   const [isRunning, setIsRunning] = useState(true);
 

@@ -37,15 +37,33 @@ export async function createSensor(formData: FormData): Promise<Sensor> {
   return response.json();
 }
 
-// DELETE SENSOR
-export async function deleteSensor(id: number): Promise<Sensor> {
-  const response = await fetch(`${API_URL}/Sensors/${id}`, {
-    method: "DELETE",
+
+
+export interface IngestResult {
+  ingested: number;
+  skipped: string[];
+  alertsRaised: number;
+}
+
+// SEND A JAGGED BATCH OF READINGS
+export async function ingestBatch(sensorIds: string[], rawBatches: number[][]): Promise<IngestResult> {
+  const response = await fetch(`${API_URL}/Telemetry/ingest-batch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sensorIds, rawBatches }),
   });
-  if (!response.ok) throw new Error("Failed to delete sensor");
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to send batch");
+  }
   return response.json();
 }
 
+// DELETE SENSOR (204 has no body so no .json())
+export async function deleteSensor(id: number): Promise<void> {
+  const response = await fetch(`${API_URL}/Sensors/${id}`, { method: "DELETE" });
+  if (!response.ok) throw new Error("Failed to delete sensor");
+}
 export const getTelemetryBySensorId = async (
   sensorId: string | number
 ): Promise<SensorReading[]> => {
@@ -77,6 +95,7 @@ export async function acknowledgeAlert(id: number): Promise<void> {
 
   if (!putResponse.ok) throw new Error("Failed to acknowledge alert");
 }
+
 
 
 

@@ -13,13 +13,20 @@ namespace backendAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly DeploymentTreeService _deploymentTreeService;
-     private readonly IWebHostEnvironment _env;
+        private readonly IWebHostEnvironment _env;
 
-        public SensorsController(ApplicationDbContext context, DeploymentTreeService deploymentTreeService,  IWebHostEnvironment env)
+        // only these file types and sizes are accepted for the attachment (Microsoft Learn, 2026)
+        private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".pdf", ".png", ".jpg", ".jpeg", ".txt", ".csv", ".log"
+        };
+        private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
+
+        public SensorsController(ApplicationDbContext context, DeploymentTreeService deploymentTreeService, IWebHostEnvironment env)
         {
             _context = context;
             _deploymentTreeService = deploymentTreeService;
-             _env = env;
+            _env = env;
         }
 
         // GET: api/Sensors
@@ -45,47 +52,66 @@ namespace backendAPI.Controllers
             return sensor;
         }
 
-       // POST: api/Sensors
-[HttpPost]
-public async Task<ActionResult<Sensor>> Create([FromForm] Sensor sensor, IFormFile? attachment)
-{
-    var deploymentNode = await _context.DeploymentNodes
-        .Include(n => n.Children)
-        .FirstOrDefaultAsync(n => n.Id == sensor.DeploymentNodeId);
-
-    if (deploymentNode == null)
-        return BadRequest("The specified deployment location does not exist");
-
-    var rootNode = await GetRootNode(deploymentNode);
-    bool isValid = _deploymentTreeService.ValidateDeploymentPath(rootNode, deploymentNode.Name, "", out string fullPath);
-
-    if (!isValid)
-        return BadRequest("The deployment location could not be validated against the facility tree");
-
-    if (attachment != null && attachment.Length > 0)
-    {
-        var uploadsFolder = Path.Combine(_env.ContentRootPath, "Uploads", "Sensors");
-        if (!Directory.Exists(uploadsFolder))
-            Directory.CreateDirectory(uploadsFolder);
-
-        // same collision-safe naming as the reference project
-        var fileName = Guid.NewGuid().ToString() + "_" + attachment.FileName;
-        var filePath = Path.Combine(uploadsFolder, fileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        // POST: api/Sensors
+        [HttpPost]
+        public async Task<ActionResult<Sensor>> Create([FromForm] Sensor sensor, IFormFile? attachment)
         {
-            await attachment.CopyToAsync(stream);
+            var deploymentNode = await _context.DeploymentNodes
+                .Include(n => n.Children)
+                .FirstOrDefaultAsync(n => n.Id == sensor.DeploymentNodeId);
+
+            if (deploymentNode == null)
+            {
+                return BadRequest("The specified deployment location does not exist");
+            }
+
+            var rootNode = await GetRootNode(deploymentNode);
+            bool isValid = _deploymentTreeService.ValidateDeploymentPath(rootNode, deploymentNode.Name, "", out string fullPath);
+
+            if (!isValid)
+            {
+                return BadRequest("The deployment location could not be validated against the facility tree");
+            }
+
+            if (attachment != null && attachment.Length > 0)
+            {
+                // check the file type and size before anything is saved to disk
+                if (!AllowedExtensions.Contains(Path.GetExtension(attachment.FileName)))
+                {
+                    return BadRequest("File type not allowed. Upload a pdf, image, txt, csv or log file");
+                }
+
+                if (attachment.Length > MaxFileSize)
+                {
+                    return BadRequest("File is too large. The maximum size is 5MB");
+                }
+
+                var uploadsFolder = Path.Combine(_env.ContentRootPath, "Uploads", "Sensors");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                // same collision-safe naming as the reference project
+                // Path.GetFileName strips any folder parts from the uploaded name
+                var fileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(attachment.FileName);
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await attachment.CopyToAsync(stream);
+                }
+
+                sensor.FilePath = "/Uploads/Sensors/" + fileName;
+            }
+
+            // the sensor is saved whether or not a file was attached
+            sensor.RegisteredAt = DateTime.UtcNow;
+            _context.Sensors.Add(sensor);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = sensor.Id }, sensor);
         }
-
-        sensor.FilePath = "/Uploads/Sensors/" + fileName;
-    }
-
-    sensor.RegisteredAt = DateTime.UtcNow;
-    _context.Sensors.Add(sensor);
-    await _context.SaveChangesAsync();
-
-    return CreatedAtAction(nameof(GetById), new { id = sensor.Id }, sensor);
-}
 
         // PUT: api/Sensors/5
         [HttpPut("{id}")]
@@ -169,5 +195,7 @@ Emeris School of Computer Science. 2025. PROG7311 Docker part 2- connecting betw
 Emeris School of Computer Science. 2025. PROG7311 Docker part 3- databases in docker. (Version 10.0) [Source Code]. Available at: <https://youtu.be/6tYEbngWY-E?si=10rSEEpfSNL5Kg8k> [Accessed 5 June 2026]
 Emeris School of Computer Science. 2025. PROG7311 Docker part 4- connecting to database from the API.(Version 10.0) [Source Code]. Available at: <https://youtu.be/_PwpPMoeqzw?si=Q0ELlPZdN42dFU9q> [Accessed 5 June 2026]
 Emeris School of Computer Science. 2025. PROG7311 Docker part 5- connecting them all together- DB -API -MVC. (Version 10.0) [Source Code]. Available at: <https://youtu.be/YlIajRMdLPk?si=D75XZKO-L6nQhR-3> [Accessed 5 June 2026]
+Microsoft Learn, 2026. Upload files in ASP.NET Core. [online] Available at: <https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads> [Accessed DD Month 2026] (read the page and check the year before keeping this reference)
+Microsoft Learn, 2026. HashSet<T> Class. [online] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.hashset-1> [Accessed DD Month 2026] (read the page and check the year before keeping this reference)
 
 */

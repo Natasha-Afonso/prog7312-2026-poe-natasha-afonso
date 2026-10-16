@@ -17,7 +17,7 @@ namespace backendAPI.Models
         public string Value { get; set; }
         public string Threshold { get; set; }
 
-        public string Status { get; set; } // unread, acknowledged, resolved
+        public string Status { get; set; } = "unread"; // unread, acknowledged, resolved
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }

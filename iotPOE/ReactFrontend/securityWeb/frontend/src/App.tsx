@@ -10,15 +10,15 @@ import {
 
 import { SideBar } from "./components/SideBar";
 import { TopBar } from "./components/TopBar";
-import { SensorDetailPage} from "./pages/SensorDetailPage";
-import { DashboardPage} from "./pages/Dashboard";
+import { SensorDetailPage } from "./pages/SensorDetailPage";
+import { DashboardPage } from "./pages/Dashboard";
 import { HealthCheckPage } from "./pages/HealthCheckPage";
 import { AlertOverlay } from "./components/AlertOverlay";
 import { IncomingAlertToast } from "./components/IncomingAlertToast";
 import { AlertsHistoryPage } from "./pages/AlertsHistoryPage";
 import { AlertProvider, useAlert } from "./context/AlertContext";
 import { acknowledgeAlert } from "./services/api.ts";
-
+import { useAlertPolling } from "./hooks/useAlertPolling.tsx";
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -26,7 +26,7 @@ const AppContent: React.FC = () => {
 
   const isLoginPage = location.pathname === "/landing";
 
-  
+
   const {
     activeAlert,
     isOverlayOpen,
@@ -34,7 +34,11 @@ const AppContent: React.FC = () => {
     incomingAlert,
     openAlert,
   } = useAlert();
- 
+
+  // inside AppContent, after the useAlert() line
+  useAlertPolling();
+
+
   return (
     <div
       className={
@@ -46,12 +50,12 @@ const AppContent: React.FC = () => {
 
       {/* dont show sidebar when on login */}
       {!isLoginPage && <SideBar
-       
+
       />}
 
       <div className={isLoginPage ? "" : "workspace"}>
 
-          {/* dont show topbar when on login */}
+        {/* dont show topbar when on login */}
         {!isLoginPage && <TopBar />}
 
         <main className={isLoginPage ? "" : "page-wrap"}>
@@ -73,10 +77,10 @@ const AppContent: React.FC = () => {
               path="/sensorDetail/:id"
               element={<SensorDetailPage />}
             />
-           
-               
-               <Route path="/alerts" element={<AlertsHistoryPage />}   
- />
+
+
+            <Route path="/alerts" element={<AlertsHistoryPage />}
+            />
 
             {/* Backend health */}
             <Route
@@ -100,7 +104,7 @@ const AppContent: React.FC = () => {
         </main>
 
       </div>
-        {/* Global Alerts & Toasts */}
+      {/* Global Alerts & Toasts */}
       {!isLoginPage && (
         <>
           <AlertOverlay
@@ -108,14 +112,14 @@ const AppContent: React.FC = () => {
             isOpen={isOverlayOpen}
             onClose={closeAlert}
             onAcknowledge={(id) => {
-             acknowledgeAlert(Number(id)).catch((err) =>
-            console.error("Failed to acknowledge alert:", err)
-            );
+              acknowledgeAlert(Number(id)).catch((err) =>
+                console.error("Failed to acknowledge alert:", err)
+              );
               closeAlert();
             }}
             onViewSensor={(sensorId) => {
               closeAlert();
-              navigate(`/sensors/${sensorId}`);
+              navigate(`/sensorDetail/${sensorId}`);
             }}
             onViewAllAlerts={() => {
               closeAlert();
@@ -141,8 +145,8 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-    <AlertProvider>
-      <AppContent />
+      <AlertProvider>
+        <AppContent />
       </AlertProvider>
     </BrowserRouter>
   );

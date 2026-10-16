@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using backendAPI.Data;
 using backendAPI.Services;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.FileProviders;
+
 
 namespace backendAPI
 {
@@ -11,8 +13,8 @@ namespace backendAPI
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-         
-          // Define CORS policy name
+
+            // Define CORS policy name
             var corsPolicyName = "AllowReactApp";
 
             // Add services to the container.
@@ -43,7 +45,7 @@ namespace backendAPI
                 });
 
             builder.Services.AddHttpClient();
- // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi(); // Keeps the native engine
 
             var app = builder.Build();
@@ -58,9 +60,17 @@ namespace backendAPI
                     options.RoutePrefix = "swagger";
                 });
             }
-//(Rudman,2026)
+            //(Rudman,2026)
             app.UseHttpsRedirection();
-             // Enable CORS middleware (Must be between UseHttpsRedirection and UseAuthorization)
+            // Enable CORS middleware (Must be between UseHttpsRedirection and UseAuthorization)
+            var uploadsRoot = Path.Combine(app.Environment.ContentRootPath, "Uploads");
+            Directory.CreateDirectory(uploadsRoot); // PhysicalFileProvider needs the folder to exist
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(uploadsRoot),
+                RequestPath = "/Uploads"
+            });
             app.UseCors(corsPolicyName);
             app.UseAuthorization();
             app.MapControllers();
