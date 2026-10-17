@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Power, RotateCcw, Radio } from "lucide-react";
-import { Glass } from "../components/Glass.tsx";
+import { Glass } from "../components/Glass";
+import { TimelineChart } from "../components/TimelineChart.tsx";
 import { useCommandStream } from "../context/CommandStreamContext.tsx";
+import { getTimeline } from "../services/api.ts";
 import type { CommandRecord, CommandLogEntry } from "../models/Command.ts";
+import type { TimelineResponse } from "../models/timeline.ts";
 
 // the API sends UTC times, the saved history comes without a "Z" on the end
 // so add it, otherwise the browser reads the time as local time and shows it wrong
@@ -40,7 +43,62 @@ export const CommandStreamPage: React.FC = () => {
     clearError,
   } = useCommandStream();
 
+  // which sensor's timeline is on the graph, and the timeline the API sent back
+  const [timelineDevice, setTimelineDevice] = useState<string | null>(null);
+  const [timeline, setTimeline] = useState<TimelineResponse | null>(null);
+
   const actuatorsOn = devices.filter((d) => d.isActuator && d.state === "on").length;
+  const sensors = devices.filter((d) => !d.isActuator);
+
+  // pick the first sensor once the devices have loaded
+  useEffect(() => {
+    if (!timelineDevice) {
+      const firstSensor = devices.find((d) => !d.isActuator);
+
+      if (firstSensor) {
+        setTimelineDevice(firstSensor.deviceIdentifier);
+      }
+    }
+  }, [devices, timelineDevice]);
+
+  // load the selected sensor's timeline now and then every 2 seconds
+  useEffect(() => {
+    if (!timelineDevice) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadTimeline = async () => {
+      try {
+        const data = await getTimeline(timelineDevice, 100);
+
+        if (!cancelled) {
+          setTimeline(data);
+        }
+      } catch (err) {
+        console.error("Failed to load the timeline:", err);
+      }
+    };
+
+    loadTimeline();
+    const interval = setInterval(loadTimeline, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [timelineDevice]);
+
+  // the points are already sorted by the API, the chart just draws them in order
+  const chartLabels = useMemo(
+    () => (timeline ? timeline.points.map((p) => formatTime(p.timestamp)) : []),
+    [timeline]
+  );
+  const chartValues = useMemo(
+    () => (timeline ? timeline.points.map((p) => p.value) : []),
+    [timeline]
+  );
 
   return (
     <div className="content">
@@ -186,6 +244,32 @@ export const CommandStreamPage: React.FC = () => {
           </table>
 
         </div>
+
+      </Glass>
+
+      <Glass className="card wide chart-panel">
+
+        <div className="label">
+          Sensor Timeline {timeline && <small>• {timeline.count} points, sorted by timestamp</small>}
+        </div>
+
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", margin: "8px 0" }}>
+          {sensors.map((sensor) => (
+            <button
+              key={sensor.deviceIdentifier}
+              className={sensor.deviceIdentifier === timelineDevice ? "btn-primary" : "btn-secondary"}
+              onClick={() => setTimelineDevice(sensor.deviceIdentifier)}
+            >
+              {sensor.deviceIdentifier}
+            </button>
+          ))}
+        </div>
+
+        <TimelineChart
+          labels={chartLabels}
+          values={chartValues}
+          seriesName={timelineDevice ?? "Timeline"}
+        />
 
       </Glass>
 

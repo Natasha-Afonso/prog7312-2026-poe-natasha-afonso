@@ -1,0 +1,172 @@
+@import url('https://fonts.googleapis.com/css?family=Abril+Fatface|Lato:300,400,700|Poiret+One');
+
+.landing-container {
+  min-height: 100vh;
+  width: 100%;
+  background: #0f172a; /* Dark slate background */
+  background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%);
+  display: flex;
+  flex-direction: column;
+  font-family: 'Lato', sans-serif;
+  overflow: hidden;
+}
+
+/* NAVBAR */
+.landing-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 50px;
+  width: 100%;
+}
+
+.nav-logo {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-logo h3 {
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  letter-spacing: 10px;
+  color: #ffffff;
+  font-size: 24px;
+  margin: 0;
+}
+
+.nav-logo h4 {
+  font-family: 'Lato', sans-serif;
+  font-weight: 100;
+  letter-spacing: 8px;
+  color: #94a3b8;
+  font-size: 14px;
+  margin: 0;
+}
+
+.system-status {
+  color: #1fd1b2;
+  font-size: 12px;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #1fd1b2;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #1fd1b2;
+}
+
+/* MAIN HERO */
+.landing-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  position: relative;
+}
+
+.main-title-div {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.REALh1 {
+  font-size: 4.5em;
+  letter-spacing: 25px;
+  font-weight: lighter;
+  font-family: 'Abril Fatface', cursive;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.ESTATEh2 {
+  font-size: 1.2em;
+  letter-spacing: 20px;
+  font-weight: 300;
+  color: #94a3b8;
+  margin-top: 10px;
+}
+
+.divider-line {
+  width: 150px;
+  height: 1px;
+  background: #334155;
+  margin: 30px auto 0;
+}
+
+/* FLOATING MODULE CARDS */
+.module-cards-container {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 1100px;
+  width: 100%;
+  z-index: 10;
+}
+
+/* Custom styles for your existing Glass cards on this page */
+.landing-module-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(30, 41, 59, 0.7); /* Glassmorphism */
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 30px;
+  width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.landing-module-card:hover {
+  transform: translateY(-5px);
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(31, 209, 178, 0.3); /* Teal glow on hover */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.landing-module-card .label {
+  color: #94a3b8;
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.landing-module-card .value {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.landing-module-card .metric-icon-wrapper {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--iconColor);
+}
+
+/* Disabled state overrides */
+.landing-module-card.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.landing-module-card.disabled:hover {
+  transform: translateY(0);
+  border: 1px solid rgba(239, 68, 68, 0.3); /* Red border for disabled */
+  box-shadow: none;
+}

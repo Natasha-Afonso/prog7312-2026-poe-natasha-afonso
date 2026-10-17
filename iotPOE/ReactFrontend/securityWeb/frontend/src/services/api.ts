@@ -3,6 +3,8 @@ import type { AlertDto } from "../models/alert.ts";
 import type { DeviceState, CommandRecord, CommandLogEntry, CommandAction } from "../models/Command.ts";
 
 import type { Sensor } from "../models/sensor.ts"; // Imports sensor interface
+import type { TimelineResponse } from "../models/timeline.ts";
+
 
 const API_URL = "http://localhost:8080/api"; 
 
@@ -151,6 +153,13 @@ export async function getCommandHistory(limit: number = 50): Promise<CommandLogE
   return response.json();
 }
 
+// THE TIMELINE OF ONE DEVICE, ALREADY IN TIME ORDER (oldest first)
+export async function getTimeline(deviceIdentifier: string, limit: number = 100): Promise<TimelineResponse> {
+  const response = await fetch(`${API_URL}/Timeline/${encodeURIComponent(deviceIdentifier)}?limit=${limit}`);
+  if (!response.ok) throw new Error(`Failed to fetch the timeline for ${deviceIdentifier}`);
+  return response.json();
+}
+ 
 
 {/*
   References

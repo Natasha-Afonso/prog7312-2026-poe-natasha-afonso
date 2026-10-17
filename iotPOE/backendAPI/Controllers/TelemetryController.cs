@@ -16,17 +16,20 @@ namespace backendAPI.Controllers
         private readonly TelemetryIngestionService _ingestionService;
         private readonly DeviceRegistryService _registry;
         private readonly TelemetryQueueService _queues;
+        private readonly TimelineService _timeline;
 
         public TelemetryController(
             ApplicationDbContext context,
             TelemetryIngestionService ingestionService,
             DeviceRegistryService registry,
-            TelemetryQueueService queues)
+            TelemetryQueueService queues,
+            TimelineService timeline)
         {
             _context = context;
             _ingestionService = ingestionService;
             _registry = registry;
             _queues = queues;
+            _timeline = timeline;
         }
 
         // GET: api/Telemetry/5
@@ -71,6 +74,9 @@ namespace backendAPI.Controllers
 
                 // the registry (the cache) is updated straight away, before anything is saved
                 _registry.RecordReading(device.DeviceIdentifier, packet.Value, packet.Timestamp);
+
+                // the timeline keeps the reading in time order so a graph can be drawn instantly
+                _timeline.Add(device.DeviceIdentifier, packet.Timestamp, packet.Value, packet.MetricName);
 
                 // 0 = normal reading, 1 or more = critical (how far past the limit)
                 int severity = AlertRules.GetSeverity(device.Category, packet.Value);
@@ -263,6 +269,6 @@ Emeris School of Computer Science. 2025. PROG7311 Docker part 2- connecting betw
 Emeris School of Computer Science. 2025. PROG7311 Docker part 3- databases in docker. (Version 10.0) [Source Code]. Available at: <https://youtu.be/6tYEbngWY-E?si=10rSEEpfSNL5Kg8k> [Accessed 5 June 2026]
 Emeris School of Computer Science. 2025. PROG7311 Docker part 4- connecting to database from the API.(Version 10.0) [Source Code]. Available at: <https://youtu.be/_PwpPMoeqzw?si=Q0ELlPZdN42dFU9q> [Accessed 5 June 2026]
 Emeris School of Computer Science. 2025. PROG7311 Docker part 5- connecting them all together- DB -API -MVC. (Version 10.0) [Source Code]. Available at: <https://youtu.be/YlIajRMdLPk?si=D75XZKO-L6nQhR-3> [Accessed 5 June 2026]
-Microsoft Learn, 2025. Constraints on type parameters (C# Programming Guide). (Version 10.0) [Source Code] Available at: <https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters> [Accessed 12 September 2026].
-Microsoft Learn, 2026. HashSet<T> Class.  (Version 10.0) [Source Code] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.hashset-1> [Accessed 16 Month 2026] 
+Microsoft Learn, 2025. Constraints on type parameters (C# Programming Guide). [online] Available at: <https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters> [Accessed 12 September 2026].
+Microsoft Learn, 2026. HashSet<T> Class. [online] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.hashset-1> [Accessed 17 October 2026] 
 */
