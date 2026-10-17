@@ -1,3 +1,8 @@
+#   SMARTX- Automated Real Estate 🏡
+## About
+SmartX RealEstates focuses on monitoring sensors in residential properties. 
+Landlord's or the owner of the property will be able to keep track of the sensors in their property/properties. They will be able to turn off and on a tenants water supply, electricity etc. ML is used to predict when something goes wrong, like if the temerature is normally 30 degrees and it suddenly spikes to 50 the operator will receive a predictive alert and suggest that the sensor causing this is turned off.
+
 ## How to run the App 💻
 ### Terminal🔙🔚
 To run the backend application, follow the following steps:  
