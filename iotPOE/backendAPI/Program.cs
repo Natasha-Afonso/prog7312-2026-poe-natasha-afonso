@@ -48,7 +48,28 @@ namespace backendAPI
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi(); // Keeps the native engine
 
+        builder.Services.AddSingleton<DeviceRegistryService>();
             var app = builder.Build();
+
+            // load every device into the registry once at startup (Dictionary, O(1) lookups after this)
+// SQL Server can start slower than the API in Docker, so it tries a few times
+var registry = app.Services.GetRequiredService<DeviceRegistryService>();
+for (int attempt = 1; attempt <= 10; attempt++)
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        registry.Load(db.Sensors.AsNoTracking().ToList());
+        Console.WriteLine("Device registry loaded");
+        break;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Registry load attempt " + attempt + " failed: " + ex.Message);
+        Thread.Sleep(3000);
+    }
+}
 
             if (true)
             {

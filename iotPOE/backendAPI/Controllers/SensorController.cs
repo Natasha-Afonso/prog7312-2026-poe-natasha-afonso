@@ -13,6 +13,7 @@ namespace backendAPI.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly DeploymentTreeService _deploymentTreeService;
+        private readonly DeviceRegistryService _registry;
         private readonly IWebHostEnvironment _env;
 
         // only these file types and sizes are accepted for the attachment (Microsoft Learn, 2026)
@@ -22,10 +23,11 @@ namespace backendAPI.Controllers
         };
         private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
 
-        public SensorsController(ApplicationDbContext context, DeploymentTreeService deploymentTreeService, IWebHostEnvironment env)
+        public SensorsController(ApplicationDbContext context, DeploymentTreeService deploymentTreeService, DeviceRegistryService registry, IWebHostEnvironment env)
         {
             _context = context;
             _deploymentTreeService = deploymentTreeService;
+            _registry = registry;
             _env = env;
         }
 
@@ -33,7 +35,18 @@ namespace backendAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Sensor>>> GetAll()
         {
-            return await _context.Sensors.Include(s => s.DeploymentNode).ToListAsync();
+            // AsNoTracking because the live values below are only for showing, they must never be saved back
+            var sensors = await _context.Sensors
+                .AsNoTracking()
+                .Include(s => s.DeploymentNode)
+                .ToListAsync();
+
+            foreach (var sensor in sensors)
+            {
+                ApplyLiveValues(sensor);
+            }
+
+            return sensors;
         }
 
         // GET: api/Sensors/5
@@ -41,6 +54,7 @@ namespace backendAPI.Controllers
         public async Task<ActionResult<Sensor>> GetById(int id)
         {
             var sensor = await _context.Sensors
+                .AsNoTracking()
                 .Include(s => s.DeploymentNode)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -48,6 +62,8 @@ namespace backendAPI.Controllers
             {
                 return NotFound();
             }
+
+            ApplyLiveValues(sensor);
 
             return sensor;
         }
@@ -71,6 +87,12 @@ namespace backendAPI.Controllers
             if (!isValid)
             {
                 return BadRequest("The deployment location could not be validated against the facility tree");
+            }
+
+            // a second device with the same identifier would overwrite the first one in the registry
+            if (_registry.TryGet(sensor.DeviceIdentifier, out _))
+            {
+                return BadRequest("A device with that identifier is already registered");
             }
 
             if (attachment != null && attachment.Length > 0)
@@ -107,8 +129,12 @@ namespace backendAPI.Controllers
 
             // the sensor is saved whether or not a file was attached
             sensor.RegisteredAt = DateTime.UtcNow;
+            sensor.LastSeenAt = DateTime.UtcNow;
             _context.Sensors.Add(sensor);
             await _context.SaveChangesAsync();
+
+            // the new device is available for instant lookups straight away
+            _registry.Upsert(sensor);
 
             return CreatedAtAction(nameof(GetById), new { id = sensor.Id }, sensor);
         }
@@ -147,6 +173,8 @@ namespace backendAPI.Controllers
                 throw;
             }
 
+            _registry.Upsert(existingSensor);
+
             return NoContent();
         }
 
@@ -163,12 +191,25 @@ namespace backendAPI.Controllers
             _context.Sensors.Remove(sensor);
             await _context.SaveChangesAsync();
 
+            _registry.Remove(sensor.DeviceIdentifier);
+
             return NoContent();
         }
 
         private bool SensorExists(int id)
         {
             return _context.Sensors.Any(e => e.Id == id);
+        }
+
+        // the newest reading, state and last seen time live in the registry, so show those instead of the old database values
+        private void ApplyLiveValues(Sensor sensor)
+        {
+            if (_registry.TryGet(sensor.DeviceIdentifier, out DeviceState? device) && device != null)
+            {
+                sensor.LastReading = device.LastReading;
+                sensor.State = device.State;
+                sensor.LastSeenAt = device.LastSeenAt;
+            }
         }
 
         private async Task<DeploymentNode> GetRootNode(DeploymentNode node)

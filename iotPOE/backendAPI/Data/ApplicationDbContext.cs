@@ -10,6 +10,7 @@ namespace backendAPI.Data
         public DbSet<Sensor> Sensors { get; set; }
         public DbSet<Alert> Alerts { get; set; }
         public DbSet<DeploymentNode> DeploymentNodes { get; set; }
+        public DbSet<CommandLog> CommandLogs { get; set; }
         public DbSet<SensorReading> SensorReadings { get; set; }
     }
 }

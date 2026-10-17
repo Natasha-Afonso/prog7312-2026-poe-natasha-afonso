@@ -17,7 +17,9 @@ namespace backendAPI.Models
         public string Status { get; set; }
         public string? LastReading { get; set; }
 
-        public string? FilePath {get; set;}
+        public string? FilePath { get; set; }
         public DateTime RegisteredAt { get; set; } = DateTime.UtcNow;
+        public string? State { get; set; }      // on/off for actuators like pumps and relays
+        public DateTime? LastSeenAt { get; set; } // last time the device sent a reading
     }
 }
