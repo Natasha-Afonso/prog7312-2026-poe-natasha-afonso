@@ -72,6 +72,24 @@ namespace backendAPI.Services
             }
         }
 
+        // sets the on/off state of an actuator and hands back what it was BEFORE,
+        // the old state is what the undo stack needs to put the device back
+        public bool TrySetState(string deviceIdentifier, string newState, out string? previousState)
+        {
+            lock (_lock)
+            {
+                if (_devices.TryGetValue(deviceIdentifier, out var existing))
+                {
+                    previousState = existing.State;
+                    _devices[deviceIdentifier] = existing with { State = newState };
+                    return true;
+                }
+
+                previousState = null;
+                return false;
+            }
+        }
+
         public List<DeviceState> GetAll()
         {
             lock (_lock)
@@ -97,5 +115,5 @@ namespace backendAPI.Services
 
 /** 
 References
-Microsoft Learn, 2026. Dictionary<TKey,TValue> Class. [online] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2> [Accessed DD Month 2026] (read the page and check the year before keeping this reference)
+Microsoft Learn, 2026. Dictionary<TKey,TValue> Class. (Version 10.0) [Source Code] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2> [Accessed 16 October 2026]
 */

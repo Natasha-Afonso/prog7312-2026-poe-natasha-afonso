@@ -15,24 +15,18 @@ namespace backendAPI.Controllers
         private readonly ApplicationDbContext _context;
         private readonly TelemetryIngestionService _ingestionService;
         private readonly DeviceRegistryService _registry;
+        private readonly TelemetryQueueService _queues;
 
-        // safe limit for each sensor category, a reading above this raises an alert
-        // a Dictionary gives a quick lookup by the category name (Microsoft Learn, 2026)
-        private static readonly Dictionary<string, double> CategoryThresholds = new(StringComparer.OrdinalIgnoreCase)
-        {
-            { "Temperature", 35.0 },
-            { "Environmental", 35.0 },
-            { "Power", 80.0 },
-            { "Power Consumption", 80.0 },
-            { "Pressure", 150.0 },
-            { "Humidity", 70.0 }
-        };
-
-        public TelemetryController(ApplicationDbContext context, TelemetryIngestionService ingestionService, DeviceRegistryService registry)
+        public TelemetryController(
+            ApplicationDbContext context,
+            TelemetryIngestionService ingestionService,
+            DeviceRegistryService registry,
+            TelemetryQueueService queues)
         {
             _context = context;
             _ingestionService = ingestionService;
             _registry = registry;
+            _queues = queues;
         }
 
         // GET: api/Telemetry/5
@@ -63,85 +57,49 @@ namespace backendAPI.Controllers
             var packets = _ingestionService.ProcessRawBatches(request.SensorIds, request.RawBatches);
 
             var skippedIdentifiers = new HashSet<string>();
-
-            // HashSet so each sensor only raises one alert per batch (Microsoft Learn, 2026)
-            var alertedSensorIds = new HashSet<int>();
-
-            int ingestedCount = 0;
-            int alertsRaised = 0;
+            int acceptedCount = 0;
+            int priorityCount = 0;
 
             foreach (var packet in packets)
             {
-                // O(1) lookup in the registry, there is no database query per reading any more
+                // O(1) lookup in the registry
                 if (!_registry.TryGet(packet.SensorId, out DeviceState? device) || device == null)
                 {
                     skippedIdentifiers.Add(packet.SensorId);
                     continue;
                 }
 
-                var reading = new SensorReading
-                {
-                    SensorId = device.SensorId,
-                    MetricName = packet.MetricName,
-                    Value = packet.Value,
-                    Timestamp = packet.Timestamp
-                };
-
-                _context.SensorReadings.Add(reading);
-                ingestedCount++;
-
-                // the registry now holds the newest value and when the device was last heard from
+                // the registry (the cache) is updated straight away, before anything is saved
                 _registry.RecordReading(device.DeviceIdentifier, packet.Value, packet.Timestamp);
 
-                // check the reading against the limit for this device's category
-                bool hasLimit = CategoryThresholds.TryGetValue(device.Category, out double limit);
+                // 0 = normal reading, 1 or more = critical (how far past the limit)
+                int severity = AlertRules.GetSeverity(device.Category, packet.Value);
 
-                if (hasLimit && !alertedSensorIds.Contains(device.SensorId))
+                if (severity > 0)
                 {
-                    var limitReading = new SensorReading
-                    {
-                        SensorId = device.SensorId,
-                        MetricName = "Threshold",
-                        Value = limit
-                    };
-
-                    // uses the overloaded ">" operator from SensorReading
-                    if (reading > limitReading)
-                    {
-                        // dont stack up alerts, skip if this sensor already has an unread one
-                        bool alreadyUnread = await _context.Alerts
-                            .AnyAsync(a => a.SensorId == device.SensorId && a.Status == "unread");
-
-                        if (!alreadyUnread)
-                        {
-                            _context.Alerts.Add(new Alert
-                            {
-                                SensorId = device.SensorId,
-                                Title = device.Category.ToUpper() + " THRESHOLD EXCEEDED",
-                                Message = "Sensor " + device.DeviceIdentifier + " reported " + FormatValue(packet.Value) +
-                                          ", above the safe limit of " + FormatValue(limit) + ".",
-                                Metric = device.Category,
-                                Value = FormatValue(packet.Value),
-                                Threshold = FormatValue(limit),
-                                Status = "unread",
-                                Timestamp = DateTime.UtcNow
-                            });
-
-                            alertsRaised++;
-                        }
-
-                        alertedSensorIds.Add(device.SensorId);
-                    }
+                    // critical readings go into the PriorityQueue, the worst one (biggest severity) comes out first
+                    _queues.EnqueuePriority(packet, -severity);
+                    priorityCount++;
                 }
+                else
+                {
+                    // normal readings wait in the FIFO queue for the background worker
+                    _queues.EnqueueNormal(packet);
+                }
+
+                acceptedCount++;
             }
 
-            await _context.SaveChangesAsync();
+            // critical readings bypass the standard queue and are processed right now, most severe first
+            int alertsRaised = await ProcessPriorityNowAsync();
 
             return Ok(new
             {
-                ingested = ingestedCount,
+                ingested = acceptedCount,
                 skipped = skippedIdentifiers,
-                alertsRaised
+                alertsRaised,
+                priorityReadings = priorityCount,
+                queuedForWorker = acceptedCount - priorityCount
             });
         }
 
@@ -211,6 +169,77 @@ namespace backendAPI.Controllers
             return Ok(packet.ToString());
         }
 
+        // empties the PriorityQueue, saves the readings and raises the alerts straight away
+        // returns how many alerts were created
+        private async Task<int> ProcessPriorityNowAsync()
+        {
+            int alertsRaised = 0;
+
+            // HashSet so each sensor only raises one alert per call (Microsoft Learn, 2026)
+            var alertedSensorIds = new HashSet<int>();
+
+            while (_queues.TryDequeuePriority(out TelemetryPacket<double>? packet))
+            {
+                if (packet == null)
+                {
+                    continue;
+                }
+
+                if (!_registry.TryGet(packet.SensorId, out DeviceState? device) || device == null)
+                {
+                    continue;
+                }
+
+                _context.SensorReadings.Add(new SensorReading
+                {
+                    SensorId = device.SensorId,
+                    MetricName = packet.MetricName,
+                    Value = packet.Value,
+                    Timestamp = packet.Timestamp
+                });
+
+                // the most severe reading for a sensor comes out first, so later ones for the same sensor are skipped
+                if (alertedSensorIds.Contains(device.SensorId))
+                {
+                    continue;
+                }
+
+                alertedSensorIds.Add(device.SensorId);
+
+                // dont stack up alerts, skip if this sensor already has an unread one
+                bool alreadyUnread = await _context.Alerts
+                    .AnyAsync(a => a.SensorId == device.SensorId && a.Status == "unread");
+
+                if (alreadyUnread)
+                {
+                    continue;
+                }
+
+                AlertRules.TryGetRule(device.Category, out AlertRule? rule);
+                double limit = rule?.Limit ?? 0;
+                bool tooHigh = rule == null || rule.AlertWhenAbove;
+
+                _context.Alerts.Add(new Alert
+                {
+                    SensorId = device.SensorId,
+                    Title = device.Category.ToUpper() + (tooHigh ? " THRESHOLD EXCEEDED" : " BELOW SAFE LEVEL"),
+                    Message = "Sensor " + device.DeviceIdentifier + " reported " + FormatValue(packet.Value) +
+                              ", " + (tooHigh ? "above" : "below") + " the safe limit of " + FormatValue(limit) + ".",
+                    Metric = device.Category,
+                    Value = FormatValue(packet.Value),
+                    Threshold = FormatValue(limit),
+                    Status = "unread",
+                    Timestamp = DateTime.UtcNow
+                });
+
+                alertsRaised++;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return alertsRaised;
+        }
+
         // always one decimal place with a "." so it does not change with the computer's region settings
         private static string FormatValue(double value)
         {
@@ -234,6 +263,6 @@ Emeris School of Computer Science. 2025. PROG7311 Docker part 2- connecting betw
 Emeris School of Computer Science. 2025. PROG7311 Docker part 3- databases in docker. (Version 10.0) [Source Code]. Available at: <https://youtu.be/6tYEbngWY-E?si=10rSEEpfSNL5Kg8k> [Accessed 5 June 2026]
 Emeris School of Computer Science. 2025. PROG7311 Docker part 4- connecting to database from the API.(Version 10.0) [Source Code]. Available at: <https://youtu.be/_PwpPMoeqzw?si=Q0ELlPZdN42dFU9q> [Accessed 5 June 2026]
 Emeris School of Computer Science. 2025. PROG7311 Docker part 5- connecting them all together- DB -API -MVC. (Version 10.0) [Source Code]. Available at: <https://youtu.be/YlIajRMdLPk?si=D75XZKO-L6nQhR-3> [Accessed 5 June 2026]
-Microsoft Learn, 2025. Constraints on type parameters (C# Programming Guide). [online] Available at: <https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters> [Accessed 12 September 2026].
-Microsoft Learn, 2026. Dictionary<TKey,TValue> Class and HashSet<T> Class. [online] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2> and <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.hashset-1> [Accessed DD Month 2026] (read both pages and check the year before keeping this reference)
+Microsoft Learn, 2025. Constraints on type parameters (C# Programming Guide). (Version 10.0) [Source Code] Available at: <https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters> [Accessed 12 September 2026].
+Microsoft Learn, 2026. HashSet<T> Class.  (Version 10.0) [Source Code] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.hashset-1> [Accessed 16 Month 2026] 
 */

@@ -49,6 +49,9 @@ namespace backendAPI
             builder.Services.AddOpenApi(); // Keeps the native engine
 
         builder.Services.AddSingleton<DeviceRegistryService>();
+        builder.Services.AddSingleton<TelemetryQueueService>();
+builder.Services.AddHostedService<TelemetryQueueWorker>();
+builder.Services.AddSingleton<CommandHistoryService>();
             var app = builder.Build();
 
             // load every device into the registry once at startup (Dictionary, O(1) lookups after this)

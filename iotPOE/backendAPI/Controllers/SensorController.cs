@@ -236,7 +236,7 @@ Emeris School of Computer Science. 2025. PROG7311 Docker part 2- connecting betw
 Emeris School of Computer Science. 2025. PROG7311 Docker part 3- databases in docker. (Version 10.0) [Source Code]. Available at: <https://youtu.be/6tYEbngWY-E?si=10rSEEpfSNL5Kg8k> [Accessed 5 June 2026]
 Emeris School of Computer Science. 2025. PROG7311 Docker part 4- connecting to database from the API.(Version 10.0) [Source Code]. Available at: <https://youtu.be/_PwpPMoeqzw?si=Q0ELlPZdN42dFU9q> [Accessed 5 June 2026]
 Emeris School of Computer Science. 2025. PROG7311 Docker part 5- connecting them all together- DB -API -MVC. (Version 10.0) [Source Code]. Available at: <https://youtu.be/YlIajRMdLPk?si=D75XZKO-L6nQhR-3> [Accessed 5 June 2026]
-Microsoft Learn, 2026. Upload files in ASP.NET Core. [online] Available at: <https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads> [Accessed DD Month 2026] (read the page and check the year before keeping this reference)
-Microsoft Learn, 2026. HashSet<T> Class. [online] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.hashset-1> [Accessed DD Month 2026] (read the page and check the year before keeping this reference)
+Microsoft Learn, 2026. Upload files in ASP.NET Core. (Version 10.0) [Source Code]. Available at: <https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads> [Accessed 16 Month 2026] 
+Microsoft Learn, 2026. HashSet<T> Class. (Version 10.0) [Source Code]. Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.hashset-1> [Accessed 16 Month 2026] 
 
 */
