@@ -4,21 +4,20 @@ using backendAPI.Models;
 namespace backendAPI.Services
 {
     // the safe limit for a category and which direction is dangerous
-    // AlertWhenAbove = true means too HIGH is bad (temperature), false means too LOW is bad (moisture)
+    // AlertWhenAbove = true means too HIGH is bad, false means too LOW is bad
     public record AlertRule(double Limit, bool AlertWhenAbove);
 
     public static class AlertRules
     {
         // lookup by category name, a Dictionary again (Microsoft Learn, 2026)
+        // Occupancy and Actuator have no rule on purpose, they never raise a threshold alert
         private static readonly Dictionary<string, AlertRule> Rules = new(StringComparer.OrdinalIgnoreCase)
         {
-            { "Temperature", new AlertRule(35.0, true) },
-            { "Environmental", new AlertRule(35.0, true) },
-            { "Power", new AlertRule(80.0, true) },
-            { "Power Consumption", new AlertRule(80.0, true) },
-            { "Pressure", new AlertRule(150.0, true) },
-            { "Humidity", new AlertRule(70.0, true) },
-            { "Moisture", new AlertRule(20.0, false) } // a moisture drop below 20% is critical
+            { "Environmental", new AlertRule(30.0, true) },  // server room above 30 degrees C is overheating
+            { "Power", new AlertRule(300.0, true) },         // a block using more than 300 kWh is an energy spike
+            { "Water", new AlertRule(40.0, true) },          // flow above 40 L/min suggests a burst pipe
+            { "Temperature", new AlertRule(35.0, true) },    // generic categories for sensors added from the register form
+            { "Humidity", new AlertRule(70.0, true) }
         };
 
         public static bool TryGetRule(string category, out AlertRule? rule)
@@ -52,6 +51,7 @@ namespace backendAPI.Services
         }
     }
 }
+
 
 /** 
 References

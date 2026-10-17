@@ -48,42 +48,48 @@ namespace backendAPI
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi(); // Keeps the native engine
 
-        builder.Services.AddSingleton<DeviceRegistryService>();
-        builder.Services.AddSingleton<TelemetryQueueService>();
-builder.Services.AddHostedService<TelemetryQueueWorker>();
-builder.Services.AddSingleton<CommandHistoryService>();
+            builder.Services.AddSingleton<DeviceRegistryService>();
+            builder.Services.AddSingleton<TelemetryQueueService>();
+            builder.Services.AddHostedService<TelemetryQueueWorker>();
+            builder.Services.AddSingleton<CommandHistoryService>();
             var app = builder.Build();
 
             // load every device into the registry once at startup (Dictionary, O(1) lookups after this)
-// SQL Server can start slower than the API in Docker, so it tries a few times
-var registry = app.Services.GetRequiredService<DeviceRegistryService>();
-for (int attempt = 1; attempt <= 10; attempt++)
-{
-    try
-    {
-        using var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        registry.Load(db.Sensors.AsNoTracking().ToList());
-        Console.WriteLine("Device registry loaded");
-        break;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("Registry load attempt " + attempt + " failed: " + ex.Message);
-        Thread.Sleep(3000);
-    }
-}
+            // SQL Server can start slower than the API in Docker, so it tries a few times
+            var registry = app.Services.GetRequiredService<DeviceRegistryService>();
+            var timeline = app.Services.GetRequiredService<TimelineService>();
 
-            if (true)
+            for (int attempt = 1; attempt <= 10; attempt++)
             {
-                app.MapOpenApi(); // Generates /openapi/v1.json
-
-                app.UseSwaggerUI(options =>
+                try
                 {
-                    options.SwaggerEndpoint("/openapi/v1.json", "Smart-X API v1");
-                    options.RoutePrefix = "swagger";
-                });
+                    using var scope = app.Services.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    registry.Load(db.Sensors.AsNoTracking().ToList());
+
+                    // rebuild the sorted timelines from the newest saved readings, so charts have history after a restart
+                    var recent = db.SensorReadings.AsNoTracking().OrderByDescending(r => r.Timestamp).Take(3000).ToList();
+                    timeline.LoadFromReadings(recent, registry.GetAll());
+
+                    Console.WriteLine("Device registry and timelines loaded");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Registry load attempt " + attempt + " failed: " + ex.Message);
+                    Thread.Sleep(3000);
+                }
             }
+
+            // Swagger is always on
+            app.MapOpenApi(); // Generates /openapi/v1.json
+
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/openapi/v1.json", "Smart-X API v1");
+                options.RoutePrefix = "swagger";
+            });
+            
             //(Rudman,2026)
             app.UseHttpsRedirection();
             // Enable CORS middleware (Must be between UseHttpsRedirection and UseAuthorization)
