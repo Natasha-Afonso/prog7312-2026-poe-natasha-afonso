@@ -28,6 +28,7 @@ export const SensorDetailPage: React.FC = () => {
 
   // counter drives the sin/cos drift, 
   const counterRef = useRef(0);
+  const lastReadingId = useRef<number | null>(null);
 
   //Gareth, D. 2021 - lif
   useEffect(() => {
@@ -43,8 +44,13 @@ export const SensorDetailPage: React.FC = () => {
         const data = await getTelemetryBySensorId(sensorId);
         if (!data || data.length === 0) return;
 
-        // Take latest record from backend
+
         const latest = data[0];
+
+        // only update when a NEW reading has arrived, same idea as the "version" answer (Stack Overflow, 2012)
+        if (latest.id === lastReadingId.current) return;
+        lastReadingId.current = latest.id;
+
         const timestamp = new Date(latest.timestamp || Date.now()).toLocaleTimeString([], { hour12: false });
 
         let currentTemp = temp;

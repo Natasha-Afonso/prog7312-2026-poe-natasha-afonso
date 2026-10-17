@@ -1,5 +1,6 @@
 import type { SensorReading } from "../models/telemetry";
 import type { AlertDto } from "../models/alert.ts";
+import type { DeviceState, CommandRecord, CommandLogEntry, CommandAction } from "../models/Command.ts";
 
 import type { Sensor } from "../models/sensor.ts"; // Imports sensor interface
 
@@ -96,7 +97,59 @@ export async function acknowledgeAlert(id: number): Promise<void> {
   if (!putResponse.ok) throw new Error("Failed to acknowledge alert");
 }
 
+// the API sends a plain text message when it refuses a command, this reads it
+async function readError(response: Response, fallback: string): Promise<string> {
+  const text = await response.text();
+  return text || fallback;
+}
 
+// COMMAND STREAM API SERVICES
+
+// GET ALL LIVE DEVICES (from the in-memory registry)
+export async function getDevices(): Promise<DeviceState[]> {
+  const response = await fetch(`${API_URL}/Devices`);
+  if (!response.ok) throw new Error("Failed to fetch devices");
+  return response.json();
+}
+
+// SEND A COMMAND TO ONE ACTUATOR
+export async function sendCommand(deviceIdentifier: string, action: CommandAction): Promise<CommandRecord> {
+  const response = await fetch(`${API_URL}/Commands`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ deviceIdentifier, action }),
+  });
+  if (!response.ok) throw new Error(await readError(response, "Command failed"));
+  return response.json();
+}
+
+// TURN OFF EVERY ACTUATOR THAT IS ON (one undo puts them all back)
+export async function shutdownAll(): Promise<CommandRecord> {
+  const response = await fetch(`${API_URL}/Commands/shutdown-all`, { method: "POST" });
+  if (!response.ok) throw new Error(await readError(response, "Shutdown failed"));
+  return response.json();
+}
+
+// UNDO THE NEWEST COMMAND
+export async function undoCommand(): Promise<CommandRecord> {
+  const response = await fetch(`${API_URL}/Commands/undo`, { method: "POST" });
+  if (!response.ok) throw new Error(await readError(response, "Undo failed"));
+  return response.json();
+}
+
+// THE UNDO STACK, NEWEST FIRST
+export async function getCommandStack(): Promise<CommandRecord[]> {
+  const response = await fetch(`${API_URL}/Commands/stack`);
+  if (!response.ok) throw new Error("Failed to fetch the undo stack");
+  return response.json();
+}
+
+// THE SAVED COMMAND HISTORY, NEWEST FIRST
+export async function getCommandHistory(limit: number = 50): Promise<CommandLogEntry[]> {
+  const response = await fetch(`${API_URL}/Commands/history?limit=${limit}`);
+  if (!response.ok) throw new Error("Failed to fetch the command history");
+  return response.json();
+}
 
 
 {/*

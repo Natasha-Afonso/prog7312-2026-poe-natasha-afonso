@@ -12,13 +12,15 @@ import { SideBar } from "./components/SideBar";
 import { TopBar } from "./components/TopBar";
 import { SensorDetailPage } from "./pages/SensorDetailPage";
 import { DashboardPage } from "./pages/Dashboard";
-import { HealthCheckPage } from "./pages/HealthCheckPage";
 import { AlertOverlay } from "./components/AlertOverlay";
 import { IncomingAlertToast } from "./components/IncomingAlertToast";
 import { AlertsHistoryPage } from "./pages/AlertsHistoryPage";
 import { AlertProvider, useAlert } from "./context/AlertContext";
 import { acknowledgeAlert } from "./services/api.ts";
 import { useAlertPolling } from "./hooks/useAlertPolling.tsx";
+import { LandingPage } from "./pages/LandingPage";
+import { CommandStreamPage } from "./pages/CommandStreamPage.tsx";
+import { CommandStreamProvider } from "./context/CommandStreamContext.tsx";
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -84,15 +86,13 @@ const AppContent: React.FC = () => {
 
             {/* Backend health */}
             <Route
-              path="/health"
-              element={<HealthCheckPage />}
+              path="/commands"
+              element={<CommandStreamPage />}
             />
 
             {/* Root */}
-            <Route
-              path="/"
-              element={<Navigate to="/login" replace />}
-            />
+          
+            <Route path="/landing" element={<LandingPage />} />
 
             {/* Unknown URL */}
             <Route
@@ -146,7 +146,9 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AlertProvider>
+      <CommandStreamProvider>
         <AppContent />
+        </CommandStreamProvider>
       </AlertProvider>
     </BrowserRouter>
   );

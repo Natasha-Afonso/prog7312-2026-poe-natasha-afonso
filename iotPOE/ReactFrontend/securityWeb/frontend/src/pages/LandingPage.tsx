@@ -6,13 +6,13 @@ import { Glass } from "../components/Glass";
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // tracks hover state for the two disabled cards so they can flash red
-  const [commandHover, setCommandHover] = useState(false);
+  // tracks hover state for the disabled card so it can flash red
   const [topologyHover, setTopologyHover] = useState(false);
 
   return (
     <div className="content">
 
+      {/* module 1 (Part 1) */}
       <Glass
         className="card compact metric-card"
         onClick={() => navigate("/dashboard")}
@@ -29,34 +29,24 @@ export const LandingPage: React.FC = () => {
         </div>
       </Glass>
 
+      {/* module 2 (Part 2), now enabled */}
       <Glass
         className="card compact metric-card"
-        onClick={() => setCommandHover(true)}
+        onClick={() => navigate("/commands")}
       >
-        <div
-          className="metric-content"
-          style={{ cursor: "not-allowed" }}
-          onMouseEnter={() => setCommandHover(true)}
-          onMouseLeave={() => setCommandHover(false)}
-        >
+        <div className="metric-content" style={{ cursor: "pointer" }}>
           <div>
-            <div className="label" style={{ color: commandHover ? "#ef4444" : undefined }}>
-              Real-Time Command Stream and History
-            </div>
-            <div className="value" style={{ color: commandHover ? "#ef4444" : undefined }}>
-              Disabled
-            </div>
+            <div className="label">Real-Time Command Stream and History</div>
+            <div className="value">Command Stream</div>
           </div>
 
-          <div
-            className="metric-icon-wrapper"
-            style={{ "--iconColor": commandHover ? "#ef4444" : "#3b82f6" } as React.CSSProperties}
-          >
+          <div className="metric-icon-wrapper" style={{ "--iconColor": "#3b82f6" } as React.CSSProperties}>
             <Activity aria-hidden="true" />
           </div>
         </div>
       </Glass>
 
+      {/* module 3 (final PoE), still disabled */}
       <Glass
         className="card compact metric-card"
         onClick={() => setTopologyHover(true)}
