@@ -4,7 +4,7 @@ import type { DeviceState, CommandRecord, CommandLogEntry, CommandAction } from 
 
 import type { Sensor } from "../models/sensor.ts"; // Imports sensor interface
 import type { TimelineResponse } from "../models/timeline.ts";
-
+import type { DeviceSearchResult} from "../models/search.ts";
 
 const API_URL = "http://localhost:8080/api"; 
 
@@ -157,6 +157,27 @@ export async function getCommandHistory(limit: number = 50): Promise<CommandLogE
 export async function getTimeline(deviceIdentifier: string, limit: number = 100): Promise<TimelineResponse> {
   const response = await fetch(`${API_URL}/Timeline/${encodeURIComponent(deviceIdentifier)}?limit=${limit}`);
   if (!response.ok) throw new Error(`Failed to fetch the timeline for ${deviceIdentifier}`);
+  return response.json();
+}
+ 
+
+// SEARCH AND FILTER DEVICES (the API does the filtering)
+// track = true records the search in the search history, the automatic refresh uses false
+export async function searchDevices(
+  query: string,
+  category: string,
+  alertState: string,
+  track: boolean
+): Promise<DeviceSearchResult[]> {
+  const params = new URLSearchParams();
+ 
+  if (query) params.set("query", query);
+  if (category) params.set("category", category);
+  if (alertState) params.set("alertState", alertState);
+  params.set("track", track ? "true" : "false");
+ 
+  const response = await fetch(`${API_URL}/Devices/search?${params.toString()}`);
+  if (!response.ok) throw new Error(await readError(response, "Search failed"));
   return response.json();
 }
  

@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Power, RotateCcw, Radio } from "lucide-react";
 import { Glass } from "../components/Glass";
-import { TimelineChart } from "../components/TimelineChart.tsx";
+import { TimelineChart } from "../components/TimelineChart";
 import { useCommandStream } from "../context/CommandStreamContext.tsx";
-import { getTimeline } from "../services/api.ts";
+import { getTimeline, searchDevices } from "../services/api.ts";
 import type { CommandRecord, CommandLogEntry } from "../models/Command.ts";
 import type { TimelineResponse } from "../models/timeline.ts";
+import type { DeviceSearchResult } from "../models/search.ts";
 
 // the API sends UTC times, the saved history comes without a "Z" on the end
-// so add it, otherwise the browser reads the time as local time and shows it wrong
 const formatTime = (timestamp: string | null): string => {
   if (!timestamp) {
     return "—";
@@ -29,6 +29,30 @@ const describeLog = (entry: CommandLogEntry): string => {
   return `${entry.deviceIdentifier}: ${entry.previousState ?? "?"} → ${entry.newState ?? "?"}`;
 };
 
+// the alert state filter chips
+const alertStateOptions = [
+  { value: "", label: "Any state" },
+  { value: "alerting", label: "Alerting" },
+  { value: "offline", label: "Offline" },
+  { value: "normal", label: "Normal" },
+];
+
+// which pill colour goes with which alert state
+const alertPillClass = (alertState: string): string => {
+  if (alertState === "alerting") return "warning";
+  if (alertState === "offline") return "inactive";
+  return "active";
+};
+
+const searchBoxStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  borderRadius: "8px",
+  border: "1px solid rgba(255,255,255,0.2)",
+  background: "rgba(255,255,255,0.05)",
+  color: "inherit",
+  minWidth: "240px",
+};
+
 export const CommandStreamPage: React.FC = () => {
   const {
     devices,
@@ -43,14 +67,58 @@ export const CommandStreamPage: React.FC = () => {
     clearError,
   } = useCommandStream();
 
+  // the search and filter the operator has chosen, and the devices the API found
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
+  const [alertState, setAlertState] = useState("");
+  const [results, setResults] = useState<DeviceSearchResult[]>([]);
+
   // which sensor's timeline is on the graph, and the timeline the API sent back
   const [timelineDevice, setTimelineDevice] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<TimelineResponse | null>(null);
 
   const actuatorsOn = devices.filter((d) => d.isActuator && d.state === "on").length;
+  const onlineCount = devices.filter((d) => d.status !== "offline").length;
   const sensors = devices.filter((d) => !d.isActuator);
 
-  // pick the first sensor once the devices have loaded
+  // the category chips come from the devices that exist
+  const categories = useMemo(
+    () => Array.from(new Set(devices.map((d) => d.category))).sort(),
+    [devices]
+  );
+
+  const hasCriteria = query.trim() !== "" || category !== "" || alertState !== "";
+
+  // a search the operator started: runs once typing pauses, and is recorded in the search history
+  // the 400ms wait means typing "hvac" is one search and not four
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        const found = await searchDevices(query.trim(), category, alertState, hasCriteria);
+        setResults(found);
+      } catch (err) {
+        console.error("Failed to search the devices:", err);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [query, category, alertState, hasCriteria]);
+
+  // quiet refresh every 2 seconds with the same search, not recorded in the search history
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const found = await searchDevices(query.trim(), category, alertState, false);
+        setResults(found);
+      } catch (err) {
+        console.error("Failed to refresh the devices:", err);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [query, category, alertState]);
+
+  // pick the first sensor for the timeline once the devices have loaded
   useEffect(() => {
     if (!timelineDevice) {
       const firstSensor = devices.find((d) => !d.isActuator);
@@ -100,6 +168,12 @@ export const CommandStreamPage: React.FC = () => {
     [timeline]
   );
 
+  const clearSearch = () => {
+    setQuery("");
+    setCategory("");
+    setAlertState("");
+  };
+
   return (
     <div className="content">
 
@@ -107,7 +181,7 @@ export const CommandStreamPage: React.FC = () => {
         <div className="metric-content">
           <div>
             <div className="label">Devices Online</div>
-            <div className="value">{devices.length}</div>
+            <div className="value">{onlineCount} / {devices.length}</div>
           </div>
 
           <div className="metric-icon-wrapper" style={{ "--iconColor": "#1fd1b2" } as React.CSSProperties}>
@@ -166,6 +240,58 @@ export const CommandStreamPage: React.FC = () => {
           </button>
         </div>
 
+        {/* search box and filter chips, the API does the searching */}
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", margin: "8px 0" }}>
+
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by device ID or category, e.g. hvac"
+            style={searchBoxStyle}
+          />
+
+          <button
+            className={category === "" ? "btn-primary" : "btn-secondary"}
+            onClick={() => setCategory("")}
+          >
+            All categories
+          </button>
+
+          {categories.map((name) => (
+            <button
+              key={name}
+              className={category === name ? "btn-primary" : "btn-secondary"}
+              onClick={() => setCategory(name)}
+            >
+              {name}
+            </button>
+          ))}
+
+        </div>
+
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", marginBottom: "8px" }}>
+
+          {alertStateOptions.map((option) => (
+            <button
+              key={option.value}
+              className={alertState === option.value ? "btn-primary" : "btn-secondary"}
+              onClick={() => setAlertState(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+
+          {hasCriteria && (
+            <button className="btn-secondary" onClick={clearSearch}>
+              Clear search
+            </button>
+          )}
+
+          <small>Showing {results.length} of {devices.length} devices</small>
+
+        </div>
+
         {error && (
           <div className="error-alert" onClick={clearError} style={{ cursor: "pointer" }}>
             {error} (click to dismiss)
@@ -181,6 +307,7 @@ export const CommandStreamPage: React.FC = () => {
                 <th>Device</th>
                 <th>Category</th>
                 <th>Reading / State</th>
+                <th>Alert State</th>
                 <th>Last Seen</th>
                 <th>Manual Override</th>
               </tr>
@@ -188,7 +315,13 @@ export const CommandStreamPage: React.FC = () => {
 
             <tbody>
 
-              {devices.map((device) => (
+              {results.length === 0 && (
+                <tr>
+                  <td colSpan={6}>No devices match this search.</td>
+                </tr>
+              )}
+
+              {results.map((device) => (
                 <tr key={device.deviceIdentifier}>
 
                   <td>{device.deviceIdentifier}</td>
@@ -202,6 +335,12 @@ export const CommandStreamPage: React.FC = () => {
                     ) : (
                       device.lastReading ?? "—"
                     )}
+                  </td>
+
+                  <td>
+                    <span className={`severity-pill ${alertPillClass(device.alertState)}`}>
+                      {device.alertState}
+                    </span>
                   </td>
 
                   <td>{formatTime(device.lastSeenAt)}</td>

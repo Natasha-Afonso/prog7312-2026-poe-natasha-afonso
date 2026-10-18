@@ -61,7 +61,8 @@ namespace backendAPI
             builder.Services.AddHostedService<DisconnectWatcher>();
             builder.Services.AddSingleton<TimelineService>(); 
 
-
+  builder.Services.AddSingleton<SearchHistoryService>(); 
+  
             var app = builder.Build();
 
             // load every device into the registry once at startup (Dictionary, O(1) lookups after this)
