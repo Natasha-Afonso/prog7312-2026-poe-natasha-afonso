@@ -98,6 +98,18 @@ namespace backendAPI.Services
             }
         }
 
+        // changes the status text of a device, the watcher uses it for "offline" and "active"
+public void SetStatus(string deviceIdentifier, string status)
+{
+    lock (_lock)
+    {
+        if (_devices.TryGetValue(deviceIdentifier, out var existing))
+        {
+            _devices[deviceIdentifier] = existing with { Status = status };
+        }
+    }
+}
+
         private static DeviceState ToDeviceState(Sensor sensor)
         {
             return new DeviceState(

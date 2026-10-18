@@ -209,6 +209,7 @@ namespace backendAPI.Controllers
                 sensor.LastReading = device.LastReading;
                 sensor.State = device.State;
                 sensor.LastSeenAt = device.LastSeenAt;
+                sensor.Status = device.Status;
             }
         }
 

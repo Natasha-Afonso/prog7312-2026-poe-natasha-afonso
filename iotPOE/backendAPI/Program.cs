@@ -48,10 +48,20 @@ namespace backendAPI
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi(); // Keeps the native engine
 
+
+          
+
+            // Registers the background loop
+            builder.Services.AddHostedService<SeedDataBackgroundService>();
             builder.Services.AddSingleton<DeviceRegistryService>();
             builder.Services.AddSingleton<TelemetryQueueService>();
             builder.Services.AddHostedService<TelemetryQueueWorker>();
             builder.Services.AddSingleton<CommandHistoryService>();
+            builder.Services.AddSingleton<DisconnectTrackerService>();
+            builder.Services.AddHostedService<DisconnectWatcher>();
+            builder.Services.AddSingleton<TimelineService>(); 
+
+
             var app = builder.Build();
 
             // load every device into the registry once at startup (Dictionary, O(1) lookups after this)
@@ -89,7 +99,7 @@ namespace backendAPI
                 options.SwaggerEndpoint("/openapi/v1.json", "Smart-X API v1");
                 options.RoutePrefix = "swagger";
             });
-            
+
             //(Rudman,2026)
             app.UseHttpsRedirection();
             // Enable CORS middleware (Must be between UseHttpsRedirection and UseAuthorization)

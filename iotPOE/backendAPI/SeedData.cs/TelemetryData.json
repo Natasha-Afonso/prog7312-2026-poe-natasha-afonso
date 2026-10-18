@@ -1,0 +1,29 @@
+{
+  "sensors": [
+    {
+      "deviceIdentifier": "TEMP:SRV",
+      "minValue": 18.0,
+      "maxValue": 32.0
+    },
+    {
+      "deviceIdentifier": "PWR:BLOCKA",
+      "minValue": 150.0,
+      "maxValue": 320.0
+    },
+    {
+      "deviceIdentifier": "PWR:BLOCKB",
+      "minValue": 120.0,
+      "maxValue": 280.0
+    },
+    {
+      "deviceIdentifier": "H2O:BASEMENT",
+      "minValue": 10.0,
+      "maxValue": 45.0
+    },
+    {
+      "deviceIdentifier": "OCC:LOBBY",
+      "minValue": 0.0,
+      "maxValue": 1.0
+    }
+  ]
+}
