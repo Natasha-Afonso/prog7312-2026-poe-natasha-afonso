@@ -39,7 +39,7 @@ export const TelemetryChart: React.FC<TelemetryChartProps> = ({
         {
           label: "Pressure (bar)",
           data: [],
-          borderColor: "var(--accent)",
+          borderColor: "#1fd1b2",
           borderWidth: 2,
           pointRadius: 0,
           tension: 0.2,
@@ -55,6 +55,11 @@ export const TelemetryChart: React.FC<TelemetryChartProps> = ({
       options: {
         responsive: true,
         maintainAspectRatio: false,
+         layout: {
+          padding:{
+          bottom: 10
+          }
+        },
         plugins: { legend: { display: false } },
         // Substitute the appropriate scale IDs
         scales: {
@@ -63,6 +68,7 @@ export const TelemetryChart: React.FC<TelemetryChartProps> = ({
             ticks: { color: "rgba(255,255,255,0.4)", font: { family: "monospace", size: 10 } },
           },
           y: {
+            grace: "10%",
             grid: { color: "rgba(255,255,255,0.06)" },
             ticks: { color: "rgba(255,255,255,0.4)", font: { family: "monospace", size: 10 } },
           },
