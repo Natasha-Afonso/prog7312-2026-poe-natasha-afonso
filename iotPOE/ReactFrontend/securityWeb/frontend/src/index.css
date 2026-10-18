@@ -3076,6 +3076,66 @@ transform: translate(22px, -50%);
 }
 
 
+.glass-toggle {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.glass-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: .3s ease;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: rgba(255, 255, 255, 0.5);
+  transition: .3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-radius: 50%;
+}
+
+/* When the switch is ON */
+input:checked + .toggle-slider {
+  background-color: rgba(31, 209, 178, 0.2); /* Teal background */
+  border-color: #1fd1b2;
+  box-shadow: 0 0 12px rgba(31, 209, 178, 0.25);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+  background-color: #1fd1b2; /* Glowing teal knob */
+  box-shadow: 0 0 8px #1fd1b2;
+}
+
+/* Disabled state */
+.glass-toggle input:disabled + .toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
 /*
   References
   Codepen,2026. Glsmrphsm-insprd.(Version 10) [Source Code] Available at: https://codepen.io/rhcclvyw-the-builder/details/zxKvJwy [Accessed 12 September 2026].

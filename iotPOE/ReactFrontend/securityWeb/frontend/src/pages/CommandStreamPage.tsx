@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Power, RotateCcw, Radio } from "lucide-react";
 import { Glass } from "../components/Glass";
 import { TimelineChart } from "../components/TimelineChart";
@@ -89,8 +89,30 @@ export const CommandStreamPage: React.FC = () => {
 
   const hasCriteria = query.trim() !== "" || category !== "" || alertState !== "";
 
-  // a search the operator started: runs once typing pauses, and is recorded in the search history
-  // the 400ms wait means typing "hvac" is one search and not four
+  // 1. FIX FOR INFINITE LOOP: use a ref to hold the latest search criteria
+  const searchCriteriaRef = useRef({ query: "", category: "", alertState: "" });
+
+  useEffect(() => {
+    searchCriteriaRef.current = { query, category, alertState };
+  }, [query, category, alertState]);
+
+  // 2. Background polling runs ONCE on mount and reads from the ref (no infinite loop)
+  useEffect(() => {
+    const refreshPoll = async () => {
+      try {
+        const { query, category, alertState } = searchCriteriaRef.current;
+        const found = await searchDevices(query.trim(), category, alertState, false);
+        setResults(found);
+      } catch (err) {
+        console.error("Failed to refresh the devices:", err);
+      }
+    };
+
+    const interval = setInterval(refreshPoll, 3000); // 3 seconds to prevent API overload
+    return () => clearInterval(interval);
+  }, []); 
+
+  // 3. The typing effect (runs when the user types to record history)
   useEffect(() => {
     const timer = setTimeout(async () => {
       try {
@@ -99,51 +121,31 @@ export const CommandStreamPage: React.FC = () => {
       } catch (err) {
         console.error("Failed to search the devices:", err);
       }
-    }, 400);
+    }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
   }, [query, category, alertState, hasCriteria]);
 
-  // quiet refresh every 2 seconds with the same search, not recorded in the search history
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const found = await searchDevices(query.trim(), category, alertState, false);
-        setResults(found);
-      } catch (err) {
-        console.error("Failed to refresh the devices:", err);
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [query, category, alertState]);
-
-  // pick the first sensor for the timeline once the devices have loaded
+  // 4. pick the first sensor for the timeline once the devices have loaded
   useEffect(() => {
     if (!timelineDevice) {
       const firstSensor = devices.find((d) => !d.isActuator);
-
       if (firstSensor) {
         setTimelineDevice(firstSensor.deviceIdentifier);
       }
     }
   }, [devices, timelineDevice]);
 
-  // load the selected sensor's timeline now and then every 2 seconds
+  // 5. load the selected sensor's timeline now and then every 2 seconds
   useEffect(() => {
-    if (!timelineDevice) {
-      return;
-    }
+    if (!timelineDevice) return;
 
     let cancelled = false;
 
     const loadTimeline = async () => {
       try {
         const data = await getTimeline(timelineDevice, 100);
-
-        if (!cancelled) {
-          setTimeline(data);
-        }
+        if (!cancelled) setTimeline(data);
       } catch (err) {
         console.error("Failed to load the timeline:", err);
       }
@@ -183,7 +185,6 @@ export const CommandStreamPage: React.FC = () => {
             <div className="label">Devices Online</div>
             <div className="value">{onlineCount} / {devices.length}</div>
           </div>
-
           <div className="metric-icon-wrapper" style={{ "--iconColor": "#1fd1b2" } as React.CSSProperties}>
             <Radio aria-hidden="true" />
           </div>
@@ -196,7 +197,6 @@ export const CommandStreamPage: React.FC = () => {
             <div className="label">Actuators On</div>
             <div className="value">{actuatorsOn.toString().padStart(2, "0")}</div>
           </div>
-
           <div className="metric-icon-wrapper" style={{ "--iconColor": "#f59e0b" } as React.CSSProperties}>
             <Power aria-hidden="true" />
           </div>
@@ -209,7 +209,6 @@ export const CommandStreamPage: React.FC = () => {
             <div className="label">Undo Stack</div>
             <div className="value">{undoStack.length.toString().padStart(2, "0")}</div>
           </div>
-
           <div className="metric-icon-wrapper" style={{ "--iconColor": "#a78bfa" } as React.CSSProperties}>
             <RotateCcw aria-hidden="true" />
           </div>
@@ -242,22 +241,20 @@ export const CommandStreamPage: React.FC = () => {
 
         {/* search box and filter chips, the API does the searching */}
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", margin: "8px 0" }}>
-
           <input
             type="text"
+            id="device-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by device ID or category, e.g. hvac"
             style={searchBoxStyle}
           />
-
           <button
             className={category === "" ? "btn-primary" : "btn-secondary"}
             onClick={() => setCategory("")}
           >
             All categories
           </button>
-
           {categories.map((name) => (
             <button
               key={name}
@@ -267,11 +264,9 @@ export const CommandStreamPage: React.FC = () => {
               {name}
             </button>
           ))}
-
         </div>
 
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", marginBottom: "8px" }}>
-
           {alertStateOptions.map((option) => (
             <button
               key={option.value}
@@ -289,7 +284,6 @@ export const CommandStreamPage: React.FC = () => {
           )}
 
           <small>Showing {results.length} of {devices.length} devices</small>
-
         </div>
 
         {error && (
@@ -299,9 +293,7 @@ export const CommandStreamPage: React.FC = () => {
         )}
 
         <div className="table-wrapper">
-
           <table>
-
             <thead>
               <tr>
                 <th>Device</th>
@@ -314,7 +306,6 @@ export const CommandStreamPage: React.FC = () => {
             </thead>
 
             <tbody>
-
               {results.length === 0 && (
                 <tr>
                   <td colSpan={6}>No devices match this search.</td>
@@ -323,17 +314,27 @@ export const CommandStreamPage: React.FC = () => {
 
               {results.map((device) => (
                 <tr key={device.deviceIdentifier}>
-
                   <td>{device.deviceIdentifier}</td>
                   <td>{device.category}</td>
 
+                  {/* PREMIUM DIGITAL READOUT */}
                   <td>
                     {device.isActuator ? (
                       <span className={`severity-pill ${device.state === "on" ? "active" : "inactive"}`}>
                         {device.state ?? "off"}
                       </span>
                     ) : (
-                      device.lastReading ?? "—"
+                      <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
+                        <span style={{ fontSize: "16px", fontWeight: "600", color: "#f8fafc" }}>
+                          {device.lastReading ?? "—"}
+                        </span>
+                        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
+                          {device.category.toLowerCase().includes("temp") ? "°C" : 
+                          device.category.toLowerCase().includes("power") ? "W" : 
+                          device.category.toLowerCase().includes("water") ? "L/m" : 
+                          device.category.toLowerCase().includes("humid") ? "%" : ""}
+                        </span>
+                      </div>
                     )}
                   </td>
 
@@ -345,30 +346,36 @@ export const CommandStreamPage: React.FC = () => {
 
                   <td>{formatTime(device.lastSeenAt)}</td>
 
+                  {/* PREMIUM GLASS TOGGLE */}
                   <td>
                     {device.isActuator ? (
-                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                        <button
-                          className="btn-secondary"
-                          disabled={busy}
-                          onClick={() => sendDeviceCommand(device.deviceIdentifier, "turn_on")}
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        
+                        <label className="glass-toggle">
+                          <input
+                            type="checkbox"
+                            checked={device.state === "on"}
+                            disabled={busy}
+                            onChange={() => {
+                              const action = device.state === "on" ? "turn_off" : "turn_on";
+                              sendDeviceCommand(device.deviceIdentifier, action);
+                            }}
+                          />
+                          <span className="toggle-slider"></span>
+                        </label>
+
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            letterSpacing: "0.5px",
+                            color: device.state === "on" ? "#1fd1b2" : "rgba(255,255,255,0.4)",
+                            width: "28px"
+                          }}
                         >
-                          On
-                        </button>
-                        <button
-                          className="btn-secondary"
-                          disabled={busy}
-                          onClick={() => sendDeviceCommand(device.deviceIdentifier, "turn_off")}
-                        >
-                          Off
-                        </button>
-                        <button
-                          className="btn-secondary"
-                          disabled={busy}
-                          onClick={() => sendDeviceCommand(device.deviceIdentifier, "toggle")}
-                        >
-                          Toggle
-                        </button>
+                          {device.state === "on" ? "ON" : "OFF"}
+                        </span>
+                        
                       </div>
                     ) : (
                       "—"
@@ -377,17 +384,12 @@ export const CommandStreamPage: React.FC = () => {
 
                 </tr>
               ))}
-
             </tbody>
-
           </table>
-
         </div>
-
       </Glass>
 
       <Glass className="card wide chart-panel">
-
         <div className="label">
           Sensor Timeline {timeline && <small>• {timeline.count} points, sorted by timestamp</small>}
         </div>
@@ -409,17 +411,12 @@ export const CommandStreamPage: React.FC = () => {
           values={chartValues}
           seriesName={timelineDevice ?? "Timeline"}
         />
-
       </Glass>
 
       <Glass className="card compact log-panel">
-
         <div className="label">Undo Stack (newest on top)</div>
-
         <div className="telemetry-log">
-
           {undoStack.length === 0 && <div className="log-line">Nothing to undo.</div>}
-
           {undoStack.map((command, index) => (
             <div key={command.commandNumber} className="log-line">
               <span className="log-timestamp">[#{command.commandNumber}]</span>{" "}
@@ -427,19 +424,13 @@ export const CommandStreamPage: React.FC = () => {
               <span className="log-amber">{command.action}</span> {describeChanges(command)}
             </div>
           ))}
-
         </div>
-
       </Glass>
 
       <Glass className="card compact log-panel">
-
         <div className="label">Command History</div>
-
         <div className="telemetry-log">
-
           {history.length === 0 && <div className="log-line">No commands sent yet.</div>}
-
           {history.map((entry) => (
             <div key={entry.id} className="log-line">
               <span className="log-timestamp">[{formatTime(entry.timestamp)}]</span>{" "}
@@ -447,9 +438,7 @@ export const CommandStreamPage: React.FC = () => {
               <span className="log-amber">{entry.action}</span> {describeLog(entry)}
             </div>
           ))}
-
         </div>
-
       </Glass>
 
     </div>
