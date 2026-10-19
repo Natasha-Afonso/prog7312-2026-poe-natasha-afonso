@@ -11,9 +11,9 @@ namespace backendAPI.Controllers
     {
         private readonly SeedDataBackgroundService _simulator;
 
-        public SimulatorController(SeedDataBackgroundService simulator)
+        public SimulatorController(IEnumerable<IHostedService> hostedServices)
         {
-            _simulator = simulator;
+            _simulator = hostedServices.OfType<SeedDataBackgroundService>().First();
         }
 
         [HttpPost("ramp")]
