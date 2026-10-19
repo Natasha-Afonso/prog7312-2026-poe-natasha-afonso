@@ -26,7 +26,7 @@ namespace backendAPI.Controllers
         }
 
         // POST: api/Commands
-        // sends a manual override to one actuator, action is turn_on, turn_off or toggle
+        // sends a manual override to one actuator, basictically turn on or turn off
         [HttpPost]
         public async Task<ActionResult<CommandRecord>> Send(CommandRequest request)
         {
@@ -54,7 +54,8 @@ namespace backendAPI.Controllers
 
             var change = await ApplyStateAsync(device, newState);
 
-            // the command goes on top of the undo stack together with the state the device had before
+            // the command goes on top of the undo stack as well as the 
+            // state the device had before so (last in first out?)
             var record = _history.Push(request.Action.ToLowerInvariant(), "manual", new List<DeviceChange> { change });
             await SaveToHistoryAsync(record);
 
@@ -62,7 +63,7 @@ namespace backendAPI.Controllers
         }
 
         // POST: api/Commands/shutdown-all
-        // turns off every actuator that is on, as ONE command so a single undo puts them all back
+        // turns off every actuator that is on at once. so it will be shut down all in frontend and elke will switch off
         [HttpPost("shutdown-all")]
         public async Task<ActionResult<CommandRecord>> ShutdownAll()
         {
@@ -89,7 +90,8 @@ namespace backendAPI.Controllers
         }
 
         // POST: api/Commands/undo
-        // takes the newest command off the stack and restores every device to the state it had BEFORE that command
+        // takes the newest command off the stack and restores every device to the state it had BEFORE that command 
+        //So the last command to be done is the first command to go out when user issues undo command
         [HttpPost("undo")]
         public async Task<ActionResult<CommandRecord>> Undo()
         {
@@ -100,7 +102,7 @@ namespace backendAPI.Controllers
 
             var restored = new List<DeviceChange>();
 
-            // newest change first, so a command that touched a device twice unwinds in the right order
+            // newest change first
             foreach (var change in Enumerable.Reverse(last.Changes))
             {
                 // skip a device that was deleted after the command was sent
@@ -113,7 +115,7 @@ namespace backendAPI.Controllers
                 restored.Add(await ApplyStateAsync(device, target));
             }
 
-            // the undo is saved in the history but is NOT pushed on the stack (there is no redo)
+            // the undo is saved in the history butttt its  NOT pushed on the stack (there wont be  no redo)
             var undoRecord = new CommandRecord(last.CommandNumber, "undo_" + last.Action, "undo", DateTime.UtcNow, restored);
             await SaveToHistoryAsync(undoRecord);
 
@@ -145,7 +147,7 @@ namespace backendAPI.Controllers
             return logs;
         }
 
-        // turns an action into the new on/off state, returns null for an action we do not know
+        // turns an action into the new on/off state, returns null for a unkown action
         private static string? ResolveNewState(string action, string? currentState)
         {
             switch (action.ToLowerInvariant())

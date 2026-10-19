@@ -5,6 +5,7 @@ import type { DeviceState, CommandRecord, CommandLogEntry, CommandAction } from 
 import type { Sensor } from "../models/sensor.ts"; // Imports sensor interface
 import type { TimelineResponse } from "../models/timeline.ts";
 import type { DeviceSearchResult} from "../models/search.ts";
+import type { PredictiveAction } from "../models/prediction.ts";
 
 const API_URL = "http://localhost:8080/api"; 
 
@@ -181,6 +182,15 @@ export async function searchDevices(
   return response.json();
 }
  
+
+
+//get predictions
+export async function getPredictiveActions(): Promise<PredictiveAction[]> {
+  const response = await fetch(`${API_URL}/Prediction`);
+  if (!response.ok) throw new Error("Failed to fetch predictive actions");
+  return response.json();
+}
+
 
 {/*
   References

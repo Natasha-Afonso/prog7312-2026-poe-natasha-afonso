@@ -50,7 +50,7 @@ namespace backendAPI
 
 
           
-
+             builder.Services.AddSingleton<SeedDataBackgroundService>();
             // Registers the background loop
             builder.Services.AddHostedService<SeedDataBackgroundService>();
             builder.Services.AddSingleton<DeviceRegistryService>();

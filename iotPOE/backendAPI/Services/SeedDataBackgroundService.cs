@@ -2,6 +2,7 @@ using backendAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
+//Emeris School of Computer Science, 2025
 namespace backendAPI.Services
 {
     // Background service to simulate live IoT telemetry (Huan, 2025)
@@ -15,9 +16,10 @@ namespace backendAPI.Services
         private static readonly TimeSpan PushInterval = TimeSpan.FromSeconds(5); 
 
         private List<SeedSensorConfig> _seedConfigs = new();
-        
-        // Keeps track of the last value to simulate a realistic "drifting" sensor wave
         private Dictionary<string, double> _lastValues = new();
+        
+        private readonly HashSet<string> _rampingDevices = new(StringComparer.OrdinalIgnoreCase);
+        private readonly object _lock = new();
 
         public SeedDataBackgroundService(
             IServiceScopeFactory serviceScopeFactory, 
@@ -27,6 +29,28 @@ namespace backendAPI.Services
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
+        }
+
+        public void StartRamp(string deviceIdentifier)
+        {
+            lock (_lock)
+            {
+                _rampingDevices.Add(deviceIdentifier);
+            }
+            _logger.LogWarning($"[SIMULATOR] Started heat ramp for {deviceIdentifier}");
+        }
+
+        public void StopRamp(string deviceIdentifier)
+        {
+            lock (_lock)
+            {
+                _rampingDevices.Remove(deviceIdentifier);
+                if (_seedConfigs.FirstOrDefault(c => c.DeviceIdentifier == deviceIdentifier) is var config && config != null)
+                {
+                    _lastValues[deviceIdentifier] = (config.MinValue + config.MaxValue) / 2;
+                }
+            }
+            _logger.LogWarning($"[SIMULATOR] Stopped ramp for {deviceIdentifier}");
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -53,7 +77,6 @@ namespace backendAPI.Services
                             continue; 
                         }
 
-                        // Keep Actuators alive
                         var actuators = allSensors.Where(s => s.Category == "Actuator").ToList();
                         foreach (var act in actuators)
                         {
@@ -61,7 +84,6 @@ namespace backendAPI.Services
                         }
                         await dbContext.SaveChangesAsync(stoppingToken);
 
-                        // Pick 1 or 2 random sensors to send data for
                         var telemetrySensors = allSensors.Where(s => s.Category != "Actuator").ToList();
                         var batchSensors = telemetrySensors.OrderBy(x => _random.Next()).Take(_random.Next(1, 3)).ToList();
 
@@ -78,6 +100,7 @@ namespace backendAPI.Services
                                 
                                 double min = config?.MinValue ?? 10.0;
                                 double max = config?.MaxValue ?? 100.0;
+                                double rampStep = config?.RampStep ?? 0.0;
                                 
                                 if (!_lastValues.ContainsKey(sensor.DeviceIdentifier))
                                 {
@@ -85,11 +108,22 @@ namespace backendAPI.Services
                                 }
 
                                 double current = _lastValues[sensor.DeviceIdentifier];
-                                
-                                double range = max - min;
-                                double drift = (_random.NextDouble() - 0.5) * (range * 0.10);
-                                
-                                double nextValue = current + drift;
+                                double nextValue;
+
+                                bool isRamping = false;
+                                lock (_lock) { isRamping = _rampingDevices.Contains(sensor.DeviceIdentifier); }
+
+                                if (isRamping && rampStep > 0)
+                                {
+                                    nextValue = current + rampStep;
+                                    if (nextValue > max) nextValue = max;
+                                }
+                                else
+                                {
+                                    double range = max - min;
+                                    double drift = (_random.NextDouble() - 0.5) * (range * 0.10);
+                                    nextValue = current + drift;
+                                }
                                 
                                 nextValue = Math.Max(min, Math.Min(max, nextValue));
                                 nextValue = Math.Round(nextValue, 2);
@@ -113,10 +147,6 @@ namespace backendAPI.Services
                                 // Only log new data (StackOverflow, 2012)
                                 _logger.LogInformation($"[SIMULATOR] Successfully pushed {batchSensors.Count} readings to the API.");
                             }
-                            else
-                            {
-                                _logger.LogWarning($"[SIMULATOR] API rejected data: {response.StatusCode}");
-                            }
                         }
                     }
                 }
@@ -132,11 +162,7 @@ namespace backendAPI.Services
         private async Task LoadSeedSensorsAsync()
         {
             string path = Path.Combine(AppContext.BaseDirectory, "SeedData", "TelemetryData.json");
-            if (!File.Exists(path))
-            {
-                _logger.LogError($"TelemetryData.json not found at {path}");
-                return;
-            }
+            if (!File.Exists(path)) return;
 
             string json = await File.ReadAllTextAsync(path);
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -159,15 +185,16 @@ namespace backendAPI.Services
             public string DeviceIdentifier { get; set; } = "";
             public double MinValue { get; set; }
             public double MaxValue { get; set; }
+            public double RampStep { get; set; } 
         }
     }
 }
 
 /** 
 References
-Huan, J., L., 2025. Background tasks with hosted services in ASP.NET Core. (Version 10.0) [Source Code].Available at: < https://learn.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services?view=aspnetcore-10.0&tabs=visual-studio > [Accessed 12 September 2026]
-Home Assistant Community, 2025. Webhook, JSON & Sensors to store the data received. (Version 10.0) [Source Code]. Available at: < https://community.home-assistant.io/t/webhook-json-sensors-to-store-the-data-received/781228 > [Accessed 11 September 2026]
-LearnSmartCoding, 2025. SmartCertify API clean architecture dotnet9. (Version 10.0) [Source Code].Available at: < https://github.com/learnsmartcoding/smartcertify-api-clean-architecture-dotnet9/blob/main/LSC.SmartCertify.Infrastructure/BackgroundServices/NotificationBackgroundService.cs > [Accessed 12 September 2026]
+Huan, J., L., 2025. Background tasks with hosted services in ASP.NET Core. (Version 10.0) [Source Code].Available at: < https://learn.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services?view=aspnetcore-10.0&tabs=visual-studio > [Accessed 12 October 2026]
+Home Assistant Community, 2025. Webhook, JSON & Sensors to store the data received. (Version 10.0) [Source Code]. Available at: < https://community.home-assistant.io/t/webhook-json-sensors-to-store-the-data-received/781228 > [Accessed 11 October 2026]
+LearnSmartCoding, 2025. SmartCertify API clean architecture dotnet9. (Version 10.0) [Source Code].Available at: < https://github.com/learnsmartcoding/smartcertify-api-clean-architecture-dotnet9/blob/main/LSC.SmartCertify.Infrastructure/BackgroundServices/NotificationBackgroundService.cs > [Accessed 12 October 2026]
 StackOverflow, 2024. Fluentvalidation inclusiveBetween dynamically set range. (Version 10.0) [Source Code]. Available at: < https://stackoverflow.com/questions/23938127/fluentvalidation-inclusivebetween-dynamically-set-range > [Accessed 14 October 2026]
-StackOverflow, 2012. Outputing getJSON results once and they update every x seconds without the results repeating over and over.(Version 10.0) [Source Code]. Available at: < https://stackoverflow.com/questions/11558060/outputing-getjson-results-once-and-they-update-every-x-seconds-without-the-resul > [Accessed 11 September 2026]
+StackOverflow, 2012. Outputing getJSON results once and they update every x seconds without the results repeating over and over.(Version 10.0) [Source Code]. Available at: < https://stackoverflow.com/questions/11558060/outputing-getjson-results-once-and-they-update-every-x-seconds-without-the-resul > [Accessed 11 October 2026]
 */

@@ -49,6 +49,7 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ labels, values, se
             ticks: { color: "rgba(255,255,255,0.4)", font: { family: "monospace", size: 10 }, maxTicksLimit: 8 },
           },
           y: {
+            grace: "15%",
             grid: { color: "rgba(255,255,255,0.06)" },
             ticks: { color: "rgba(255,255,255,0.4)", font: { family: "monospace", size: 10 } },
           },

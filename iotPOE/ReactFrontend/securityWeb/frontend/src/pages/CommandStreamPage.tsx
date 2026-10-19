@@ -7,6 +7,8 @@ import { getTimeline, searchDevices } from "../services/api.ts";
 import type { CommandRecord, CommandLogEntry } from "../models/Command.ts";
 import type { TimelineResponse } from "../models/timeline.ts";
 import type { DeviceSearchResult } from "../models/search.ts";
+import { PredictiveActions } from "../components/PredictiveActions.tsx";
+
 
 // the API sends UTC times, the saved history comes without a "Z" on the end
 const formatTime = (timestamp: string | null): string => {
@@ -389,6 +391,8 @@ export const CommandStreamPage: React.FC = () => {
         </div>
       </Glass>
 
+
+< PredictiveActions />
       <Glass className="card wide chart-panel">
         <div className="label">
           Sensor Timeline {timeline && <small>• {timeline.count} points, sorted by timestamp</small>}

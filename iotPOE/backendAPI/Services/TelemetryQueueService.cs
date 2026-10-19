@@ -132,5 +132,5 @@ namespace backendAPI.Services
 /** 
 References
 Microsoft Learn, 2026. Queue<T> Class and PriorityQueue<TElement,TPriority> Class. (Version 10.0) [Source Code] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.queue-1> [Accessed 16 October 2026]
- <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.priorityqueue-2> [Accessed 16 October 2026] 
+Microsoft Learn, 2026. PriorityQueue<TElement,TPriority> Class.(Version 10.0) [Source Code] Available at: <https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.priorityqueue-2> [Accessed 16 October 2026] 
 */
