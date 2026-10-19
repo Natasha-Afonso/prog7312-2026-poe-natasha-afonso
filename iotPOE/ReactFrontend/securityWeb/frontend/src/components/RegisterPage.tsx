@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { UploadCloud, FileText } from "lucide-react";
 import { createSensor } from "../services/api";
 import type { Sensor } from "../models/sensor";
 
@@ -13,9 +14,8 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
   onClose,
   onSensorRegistered,
 }) => {
-  // call variables that match backend
   const [deviceIdentifier, setDeviceIdentifier] = useState("");
-  const [category, setCategory] = useState("Temperature");
+  const [category, setCategory] = useState("Environmental");
   const [deploymentNodeId, setDeploymentNodeId] = useState<number>(1);
   const [status, setStatus] = useState("Active");
   const [lastReading, setLastReading] = useState("");
@@ -39,13 +39,36 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
 
   if (!isOpen) return null;
 
+  // --- FILE VALIDATION LOGIC ---
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    // 1. Check file size (Max 5MB)
+    if (selected.size > 5 * 1024 * 1024) {
+      setError("File is too large. Maximum size is 5MB.");
+      e.target.value = ""; // Reset input
+      return;
+    }
+
+    // 2. Check file type
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'text/plain'];
+    if (!validTypes.includes(selected.type)) {
+      setError("Invalid file type. Please upload a PDF, JPG, PNG, or TXT.");
+      e.target.value = "";
+      return;
+    }
+
+    setFile(selected);
+    setError(null); // Clear errors if valid
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Build FormData payload 
       const formData = new FormData();
       formData.append("DeviceIdentifier", deviceIdentifier);
       formData.append("Category", category);
@@ -59,7 +82,6 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
         formData.append("attachment", file); 
       }
 
-      // Call API helper from app.ts
       const createdSensor = await createSensor(formData);
 
       if (onSensorRegistered) {
@@ -68,7 +90,7 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
 
       // Reset form fields
       setDeviceIdentifier("");
-      setCategory("Temperature");
+      setCategory("Environmental");
       setDeploymentNodeId(1);
       setStatus("Active");
       setLastReading("");
@@ -87,9 +109,9 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
       <div className="modal-dark" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
-            <h2 className="modal-title">Register Sensor</h2>
+            <h2 className="modal-title">Register Asset</h2>
             <p className="modal-subtitle">
-              Add a sensor
+              Deploy a new IoT sensor to the Smart Estate
             </p>
           </div>
           <button className="modal-close" onClick={onClose} type="button">
@@ -102,32 +124,32 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
             {error && <div className="error-alert">{error}</div>}
 
             <div className="form-group">
-              <label>Sensor ID</label>
+              <label>Device Identifier (MAC / Unique ID)</label>
               <input
                 type="text"
                 value={deviceIdentifier}
                 onChange={(e) => setDeviceIdentifier(e.target.value)}
-                placeholder="e.g. SS:04"
+                placeholder="e.g. HVAC:SRV"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label>Category</label>
+              <label>Sensor Category</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
-                <option value="Temperature">Temperature</option>
-                <option value="Humidity">Humidity</option>
-                <option value="Motion">Motion</option>
-                <option value="Power">Power</option>
-                <option value="Pressure">Pressure</option>
+                <option value="Environmental">Environmental (Temp / Humidity)</option>
+                <option value="Power">Power (Wattage / Load)</option>
+                <option value="Water">Water (Flow / Leak)</option>
+                <option value="Occupancy">Occupancy (Motion / Access)</option>
+                <option value="Actuator">Actuator (Smart Switch / Valve)</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label>Location</label>
+              <label>Deployment Node ID (Location)</label>
               <input
                 type="number"
                 value={deploymentNodeId}
@@ -138,7 +160,7 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label>Status</label>
+              <label>Initial Status</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -150,25 +172,53 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label>Baseline / Initial Reading (Optional)</label>
+              <label>Baseline Reading (Optional)</label>
               <input
                 type="text"
                 value={lastReading}
                 onChange={(e) => setLastReading(e.target.value)}
-                placeholder="e.g. 24.5 °C"
+                placeholder="e.g. 24.5"
               />
             </div>
 
+            {/* PREMIUM FILE UPLOAD */}
             <div className="form-group">
-              <label>Attachment File (Optional )</label>
-              <input
-                type="file"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setFile(e.target.files[0]);
-                  }
-                }}
-              />
+              <label>Maintenance Log / Datasheet (Optional)</label>
+              <div style={{
+                border: "1px dashed rgba(255,255,255,0.2)",
+                borderRadius: "12px",
+                padding: "16px",
+                textAlign: "center",
+                position: "relative",
+                background: "rgba(255,255,255,0.02)"
+              }}>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    opacity: 0,
+                    cursor: "pointer"
+                  }}
+                  accept=".pdf,.png,.jpg,.jpeg,.txt"
+                />
+                
+                {file ? (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", color: "#1fd1b2" }}>
+                    <FileText size={18} />
+                    <span style={{ fontSize: "13px", fontWeight: 500 }}>{file.name}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: "rgba(255,255,255,0.5)" }}>
+                    <UploadCloud size={24} />
+                    <span style={{ fontSize: "13px" }}>Click to upload PDF or Image</span>
+                    <span style={{ fontSize: "11px", opacity: 0.7 }}>Max size: 5MB</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -177,7 +227,7 @@ export const RegisterSensorModal: React.FC<RegisterSensorModalProps> = ({
               Cancel
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? "Registering..." : "Register Device"}
+              {loading ? "Registering..." : "Register Asset"}
             </button>
           </div>
         </form>
