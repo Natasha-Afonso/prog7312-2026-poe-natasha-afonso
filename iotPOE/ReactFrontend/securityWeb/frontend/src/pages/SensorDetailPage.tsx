@@ -38,9 +38,7 @@ export const SensorDetailPage: React.FC = () => {
       }
       // Abramov, D. 2019
       try {
-        // FIXED: was calling fetch("https://localhost:7123/api/Telemetry/...")
-        // directly with a hardcoded, wrong port — now goes through api.ts
-        // so it points at the real running backend
+      
         const data = await getTelemetryBySensorId(sensorId);
         if (!data || data.length === 0) return;
 

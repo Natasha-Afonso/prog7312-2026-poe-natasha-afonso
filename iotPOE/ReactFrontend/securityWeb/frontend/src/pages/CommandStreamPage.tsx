@@ -8,7 +8,8 @@ import type { CommandRecord, CommandLogEntry } from "../models/Command.ts";
 import type { TimelineResponse } from "../models/timeline.ts";
 import type { DeviceSearchResult } from "../models/search.ts";
 import { PredictiveActions } from "../components/PredictiveActions.tsx";
-
+import { startSimulatorRamp, stopSimulatorRamp } from "../services/api"; 
+import { Play, Snowflake } from "lucide-react"; 
 
 // the API sends UTC times
 const formatTime = (timestamp: string | null): string => {
@@ -349,7 +350,7 @@ export const CommandStreamPage: React.FC = () => {
 
                   <td>{formatTime(device.lastSeenAt)}</td>
 
-                  {/* PREMIUM GLASS TOGGLE */}
+                  {/* Toggle switch */}
                   <td>
                     {device.isActuator ? (
                       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -391,7 +392,33 @@ export const CommandStreamPage: React.FC = () => {
           </table>
         </div>
       </Glass>
+      {/*  Simulator Control*/}
+      <Glass className="card wide">
+        <div className="table-header">
+          <div className="label"> Trigger controls</div>
+        </div>
+        
+        <div style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "10px" }}>
+          <button 
+            className="btn-secondary" 
+            onClick={() => startSimulatorRamp("TEMP:SRV")}
+          >
+            <Play size={16} /> Start Server Room Heat Ramp
+          </button>
 
+          <button 
+            className="btn-primary" 
+            onClick={() => stopSimulatorRamp("TEMP:SRV")}
+          >
+            <Snowflake size={16} /> Cool Server Room
+          </button>
+          
+          <small style={{ marginLeft: "auto", color: "rgba(255,255,255,0.5)" }}>
+            These buttons simulate a heating anomaly for the ML model.
+          </small>
+        </div>
+      </Glass>
+     
 
 < PredictiveActions />
       <Glass className="card wide chart-panel">

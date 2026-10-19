@@ -39,7 +39,7 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ labels, values, se
         maintainAspectRatio: false,
         layout: {
           padding:{
-          bottom: 10
+          bottom: 30
           }
         },
         plugins: { legend: { display: false } },

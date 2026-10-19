@@ -191,6 +191,19 @@ export async function getPredictiveActions(): Promise<PredictiveAction[]> {
   return response.json();
 }
 
+// simulator controls 
+export async function startSimulatorRamp(device: string): Promise<string> {
+  const response = await fetch(`${API_URL}/Simulator/ramp?device=${encodeURIComponent(device)}`, { method: "POST" });
+  if (!response.ok) throw new Error("Failed to start ramp");
+  return response.text();
+}
+
+export async function stopSimulatorRamp(device: string): Promise<string> {
+  const response = await fetch(`${API_URL}/Simulator/cool?device=${encodeURIComponent(device)}`, { method: "POST" });
+  if (!response.ok) throw new Error("Failed to stop ramp");
+  return response.text();
+}
+
 
 {/*
   References
