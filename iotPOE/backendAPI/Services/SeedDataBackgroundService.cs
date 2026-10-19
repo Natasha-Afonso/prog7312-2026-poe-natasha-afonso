@@ -113,10 +113,16 @@ namespace backendAPI.Services
                                 bool isRamping = false;
                                 lock (_lock) { isRamping = _rampingDevices.Contains(sensor.DeviceIdentifier); }
 
-                                if (isRamping && rampStep > 0)
+                                 if (isRamping && rampStep > 0)
                                 {
+                                    // If we just started ramping, reset the value to a normal baseline (e.g. 20)
+                                    if (current < min || current > 28) 
+                                    {
+                                        current = min; 
+                                    }
+                                    
+                                    // Force a perfect, straight climb
                                     nextValue = current + rampStep;
-                                    if (nextValue > max) nextValue = max;
                                 }
                                 else
                                 {
@@ -124,7 +130,6 @@ namespace backendAPI.Services
                                     double drift = (_random.NextDouble() - 0.5) * (range * 0.10);
                                     nextValue = current + drift;
                                 }
-                                
                                 nextValue = Math.Max(min, Math.Min(max, nextValue));
                                 nextValue = Math.Round(nextValue, 2);
 

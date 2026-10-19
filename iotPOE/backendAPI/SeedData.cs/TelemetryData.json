@@ -3,7 +3,7 @@
     {
       "deviceIdentifier": "TEMP:SRV",
       "minValue": 18.0,
-      "maxValue": 32.0,
+      "maxValue": 35.0,
       "rampStep": 0.5
     },
     {
