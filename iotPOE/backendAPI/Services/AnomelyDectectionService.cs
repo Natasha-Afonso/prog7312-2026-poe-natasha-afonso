@@ -35,10 +35,10 @@ namespace backendAPI.Services
     public class AnomalyDetectionService
     {
         private const int WindowSeconds = 120;
-        private const int MinPoints = 4;
-        private const int MinSpanSeconds = 6;
+        private const int MinPoints = 2;//
+        private const int MinSpanSeconds = 1;
         private const int MaxHorizonSeconds = 180;
-        private const double MinFitQuality = 0.1;
+        private const double MinFitQuality = 0.01;//
         private static readonly TimeSpan CacheTime = TimeSpan.FromSeconds(1);
 
         private readonly DeviceRegistryService _registry;
@@ -204,7 +204,7 @@ namespace backendAPI.Services
 
 /** 
 References
-Gami, R., 2025. Building Predictive Analytics Dashboards with ML.NET and Chart.js: Turning Data into Real-Time Insights. [online] C# Corner. Available at: <https://www.c-sharpcorner.com/article/building-predictive-analytics-dashboards-with-ml-net-and-chart-js-turning-data> [Accessed 16 October 2026]
-Microsoft Learn, 2021. Tutorial: Detect anomalies in time series with ML.NET. [online] Available at: <https://learn.microsoft.com/en-us/dotnet/machine-learning/tutorials/phone-calls-anomaly-detection> [Accessed 16 October 2026]
-Microsoft Learn, 2026. ML.NET documentation. [online] Available at: <https://learn.microsoft.com/en-us/dotnet/machine-learning/> [Accessed 16 October 2026]
+Gami, R., 2025. Building Predictive Analytics Dashboards with ML.NET and Chart.js: Turning Data into Real-Time Insights. (Version 10.0) [Source Code] C# Corner. Available at: <https://www.c-sharpcorner.com/article/building-predictive-analytics-dashboards-with-ml-net-and-chart-js-turning-data> [Accessed 16 October 2026]
+Microsoft Learn, 2021. Tutorial: Detect anomalies in time series with ML.NET. (Version 10.0) [Source Code] Available at: <https://learn.microsoft.com/en-us/dotnet/machine-learning/tutorials/phone-calls-anomaly-detection> [Accessed 16 October 2026]
+Microsoft Learn, 2026. ML.NET documentation. (Version 10.0) [Source Code] Available at: <https://learn.microsoft.com/en-us/dotnet/machine-learning/> [Accessed 16 October 2026]
 */

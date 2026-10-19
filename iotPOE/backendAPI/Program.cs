@@ -50,7 +50,7 @@ namespace backendAPI
 
 
           
-             builder.Services.AddSingleton<SeedDataBackgroundService>();
+             //builder.Services.AddSingleton<SeedDataBackgroundService>();
             // Registers the background loop
             builder.Services.AddHostedService<SeedDataBackgroundService>();
             builder.Services.AddSingleton<DeviceRegistryService>();
@@ -71,7 +71,7 @@ namespace backendAPI
             var registry = app.Services.GetRequiredService<DeviceRegistryService>();
             var timeline = app.Services.GetRequiredService<TimelineService>();
 
-            for (int attempt = 1; attempt <= 10; attempt++)
+            for (int attempt = 1; attempt <= 30; attempt++)
             {
                 try
                 {

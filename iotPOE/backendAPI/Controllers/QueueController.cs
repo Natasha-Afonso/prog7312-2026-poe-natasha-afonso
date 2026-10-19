@@ -17,7 +17,7 @@ namespace backendAPI.Controllers
 
         // GET: api/Queue/status
         // how many readings are waiting in each queue, how many have been processed
-        // and the last 20 events (shows priority readings being processed before standard ones)
+        // and the last 20  (shows priority readings being processed before normal ones ones)
         [HttpGet("status")]
         public ActionResult<QueueStatus> GetStatus()
         {

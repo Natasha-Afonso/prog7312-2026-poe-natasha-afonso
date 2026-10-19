@@ -27,6 +27,8 @@ namespace backendAPI.Controllers
             return Ok(_anomalyDetector.GetAllAnomalies());
         }
 
+  
+
         // GET: api/Prediction/TEMP:SRV
         // Returns the anomaly prediction for one specific sensor (Microsoft Learn, 2021)
         [HttpGet("{deviceIdentifier}")]

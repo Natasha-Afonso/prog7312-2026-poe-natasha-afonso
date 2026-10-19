@@ -1,9 +1,11 @@
 using System.Globalization;
 using backendAPI.Models;
+using Microsoft.Extensions.Logging; 
 
 //Emeris School of Computer Science, 2025
 namespace backendAPI.Services
 {
+    
     // Represents a single action recommended by the automated engine (Gami, 2025)
     public record PredictiveAction(string Type, string Title, string Detail, string? DeviceIdentifier, string? Action, int Score);
     public record PatternSummary(string Trigger, string DeviceIdentifier, string State, int Count);
@@ -11,6 +13,7 @@ namespace backendAPI.Services
     // Analyzes historical data to predict future anomalies and recommend actions (Gami, 2025)
     public class PredictiveActionEngine
     {
+        private readonly ILogger<PredictiveActionEngine> _logger;   
         private const int MinCount = 2;
         private const int ConditionWindowSeconds = 30;
         private const int SearchWindowSeconds = 30;
@@ -29,12 +32,14 @@ namespace backendAPI.Services
             DeviceRegistryService registry,
             TimelineService timeline,
             SearchHistoryService searchHistory,
-            AnomalyDetectionService anomalyDetector)
+            AnomalyDetectionService anomalyDetector,
+             ILogger<PredictiveActionEngine> logger) 
         {
             _registry = registry;
             _timeline = timeline;
             _searchHistory = searchHistory;
             _anomalyDetector = anomalyDetector;
+            _logger = logger;
         }
 
         public void LearnFromCommand(string deviceIdentifier, string newState)
@@ -42,16 +47,31 @@ namespace backendAPI.Services
             var conditions = GetActiveConditions();
             var searchTerms = GetRecentSearchTerms(SearchWindowSeconds, deviceIdentifier);
 
+_logger.LogInformation(
+        "[PREDICT-LEARN] Command: {Device} -> {State}. Active conditions: {Count} [{Triggers}]. Search terms: {Count2} [{Terms}]",
+        deviceIdentifier,
+        newState,
+        conditions.Count,
+        string.Join(", ", conditions.Select(c => c.Trigger)),
+        searchTerms.Count,
+        string.Join(", ", searchTerms));
+
             lock (_lock)
             {
                 foreach (var condition in conditions)
                 {
                     CountPattern((condition.Trigger, deviceIdentifier, newState));
+                    _logger.LogInformation(
+                "[PREDICT-LEARN]   pattern += ({Trigger}, {Device}, {State})",
+                condition.Trigger, deviceIdentifier, newState);
                 }
 
                 foreach (var term in searchTerms)
                 {
                     CountPattern(("search " + term, deviceIdentifier, newState));
+                    _logger.LogInformation(
+                "[PREDICT-LEARN]   pattern += (search {Term}, {Device}, {State})",
+                term, deviceIdentifier, newState);
                 }
             }
         }
@@ -78,7 +98,7 @@ namespace backendAPI.Services
             {
                 if (pattern.Count < MinCount) continue;
 
-                if (!activeTriggers.TryGetValue(pattern.Trigger, out int severity)) continue;
+                int severity = activeTriggers.TryGetValue(pattern.Trigger, out int s) ? s : 0;
 
                 if (!_registry.TryGet(pattern.DeviceIdentifier, out DeviceState? device) || device == null || !device.IsActuator) continue;
 
@@ -129,6 +149,14 @@ namespace backendAPI.Services
                 result.Add(next);
             }
 
+  _logger.LogInformation(
+        "[PREDICT-QUERY] Conditions: {Count} [{Triggers}]. Total patterns: {Patterns}. Returned {Returned} action(s): [{Actions}]",
+        conditions.Count,
+        string.Join(", ", conditions.Select(c => c.Trigger)),
+        GetPatterns().Count,
+        result.Count,
+        string.Join(" | ", result.Select(a => $"{a.Type}:{a.Title} (score {a.Score})")));
+
             return result;
         }
 
@@ -149,11 +177,13 @@ namespace backendAPI.Services
             _patterns[key] = _patterns.TryGetValue(key, out int existing) ? existing + 1 : 1;
         }
 
+
         private List<ActiveCondition> GetActiveConditions()
         {
             var conditions = new List<ActiveCondition>();
             DateTime cutoff = DateTime.UtcNow.AddSeconds(-ConditionWindowSeconds);
 
+  
             foreach (var device in _registry.GetAll())
             {
                 if (device.IsActuator) continue;

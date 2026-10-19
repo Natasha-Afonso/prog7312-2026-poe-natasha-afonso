@@ -32,23 +32,25 @@ namespace backendAPI.Services
         }
 
         public void StartRamp(string deviceIdentifier)
+{
+    lock (_lock)
+    {
+        _rampingDevices.Add(deviceIdentifier);
+        
+        //starts with the min value
+        if (_seedConfigs.FirstOrDefault(c => c.DeviceIdentifier == deviceIdentifier) is var config && config != null)
         {
-            lock (_lock)
-            {
-                _rampingDevices.Add(deviceIdentifier);
-            }
-            _logger.LogWarning($"[SIMULATOR] Started heat ramp for {deviceIdentifier}");
+            _lastValues[deviceIdentifier] = config.MinValue;
         }
-
+    }
+    _logger.LogWarning($"[SIMULATOR] Started heat ramp for {deviceIdentifier}");
+}
         public void StopRamp(string deviceIdentifier)
         {
             lock (_lock)
             {
                 _rampingDevices.Remove(deviceIdentifier);
-                if (_seedConfigs.FirstOrDefault(c => c.DeviceIdentifier == deviceIdentifier) is var config && config != null)
-                {
-                    _lastValues[deviceIdentifier] = (config.MinValue + config.MaxValue) / 2;
-                }
+                 _lastValues[deviceIdentifier] = 18.0; 
             }
             _logger.LogWarning($"[SIMULATOR] Stopped ramp for {deviceIdentifier}");
         }
@@ -104,7 +106,7 @@ namespace backendAPI.Services
                                 
                                 if (!_lastValues.ContainsKey(sensor.DeviceIdentifier))
                                 {
-                                    _lastValues[sensor.DeviceIdentifier] = (min + max) / 2; 
+                                    _lastValues[sensor.DeviceIdentifier] = min; 
                                 }
 
                                 double current = _lastValues[sensor.DeviceIdentifier];

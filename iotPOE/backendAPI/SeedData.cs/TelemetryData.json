@@ -2,9 +2,9 @@
   "sensors": [
     {
       "deviceIdentifier": "TEMP:SRV",
-      "minValue": 18.0,
-      "maxValue": 35.0,
-      "rampStep": 0.5
+      "minValue": 15.0,
+      "maxValue": 100.0,
+      "rampStep": 2.0
     },
     {
       "deviceIdentifier": "PWR:BLOCKA",

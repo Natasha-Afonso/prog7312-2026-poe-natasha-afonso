@@ -83,7 +83,7 @@ namespace backendAPI.Controllers
 
                 if (severity > 0)
                 {
-                    // critical readings go into the PriorityQueue, the worst one (biggest severity) comes out first
+                    // critical readings go into the PriorityQueue, the worst one (biggest issue) comes out first
                     _queues.EnqueuePriority(packet, -severity);
                     priorityCount++;
                 }
@@ -96,7 +96,7 @@ namespace backendAPI.Controllers
                 acceptedCount++;
             }
 
-            // critical readings bypass the standard queue and are processed right now, most severe first
+            // critical readings bypass the standard queue and are processed right now, most critical first
             int alertsRaised = await ProcessPriorityNowAsync();
 
             return Ok(new
@@ -253,7 +253,7 @@ namespace backendAPI.Controllers
         }
     }
 
-    // Advanced Arrays and Lists: request shape carrying the jagged batch
+    // jaggered arrays
     public class TelemetryBatchRequest
     {
         public string[] SensorIds { get; set; }

@@ -1,10 +1,10 @@
 //Emeris School of Computer Science, 2025
 namespace backendAPI.Services
 {
-    // one device that was changed by a command, with the state it had BEFORE so the change can be undone
+    // one device that was changed by a command, with the state  it had BEFORE so the change can be undone
     public record DeviceChange(string DeviceIdentifier, string? PreviousState, string NewState);
 
-    // one command from the operator, a command can change many devices (for example "shut down all valves")
+    // one command from the operator (eg"shut down all valves")
     public record CommandRecord(
         int CommandNumber,
         string Action,

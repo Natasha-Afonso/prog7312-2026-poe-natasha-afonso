@@ -43,7 +43,6 @@ export const PredictiveActions: React.FC = () => {
       clearInterval(interval);
     };
   }, []);
-
   return (
     <Glass className="card wide">
       <div className="table-header">

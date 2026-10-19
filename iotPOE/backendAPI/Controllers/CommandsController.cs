@@ -14,15 +14,17 @@ namespace backendAPI.Controllers
         private readonly ApplicationDbContext _context;
         private readonly DeviceRegistryService _registry;
         private readonly CommandHistoryService _history;
-
+private readonly PredictiveActionEngine _predictiveEngine;
         public CommandsController(
             ApplicationDbContext context,
             DeviceRegistryService registry,
-            CommandHistoryService history)
+            CommandHistoryService history,
+            PredictiveActionEngine predictiveEngine)
         {
             _context = context;
             _registry = registry;
             _history = history;
+            _predictiveEngine = predictiveEngine;
         }
 
         // POST: api/Commands
@@ -58,7 +60,8 @@ namespace backendAPI.Controllers
             // state the device had before so (last in first out?)
             var record = _history.Push(request.Action.ToLowerInvariant(), "manual", new List<DeviceChange> { change });
             await SaveToHistoryAsync(record);
-
+// TEACH THE ENGINE
+_predictiveEngine.LearnFromCommand(device.DeviceIdentifier, newState);
             return Ok(record);
         }
 
