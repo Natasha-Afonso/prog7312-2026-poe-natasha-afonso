@@ -34,12 +34,12 @@ namespace backendAPI.Services
     // Detects anomalies in time-series data by training a regression model on historical readings (Microsoft Learn, 2021)
     public class AnomalyDetectionService
     {
-        private const int WindowSeconds = 60;
-        private const int MinPoints = 8;
-        private const int MinSpanSeconds = 10;
+        private const int WindowSeconds = 120;
+        private const int MinPoints = 4;
+        private const int MinSpanSeconds = 6;
         private const int MaxHorizonSeconds = 180;
-        private const double MinFitQuality = 0.6;
-        private static readonly TimeSpan CacheTime = TimeSpan.FromSeconds(2);
+        private const double MinFitQuality = 0.1;
+        private static readonly TimeSpan CacheTime = TimeSpan.FromSeconds(1);
 
         private readonly DeviceRegistryService _registry;
         private readonly TimelineService _timeline;

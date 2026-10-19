@@ -13,7 +13,7 @@ namespace backendAPI.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private static readonly Random _random = new Random();
         
-        private static readonly TimeSpan PushInterval = TimeSpan.FromSeconds(5); 
+        private static readonly TimeSpan PushInterval = TimeSpan.FromSeconds(2); 
 
         private List<SeedSensorConfig> _seedConfigs = new();
         private Dictionary<string, double> _lastValues = new();
