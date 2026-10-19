@@ -404,7 +404,7 @@ export const CommandStreamPage: React.FC = () => {
             onClick={() => startSimulatorRamp("TEMP:SRV")}
           >
             <Play size={16} /> Start Server Room Heat Ramp
-          </button>
+          </button>Start-Sleep -Seconds 8
 
           <button 
             className="btn-primary" 

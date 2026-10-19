@@ -12,19 +12,21 @@ namespace backendAPI.Controllers
     {
         private readonly AnomalyDetectionService _anomalyDetector;
         private readonly DeviceRegistryService _registry;
+        private readonly PredictiveActionEngine _predictiveEngine;
 
-        public PredictionController(AnomalyDetectionService anomalyDetector, DeviceRegistryService registry)
+        public PredictionController(AnomalyDetectionService anomalyDetector, DeviceRegistryService registry, PredictiveActionEngine predictiveEngine)
         {
             _anomalyDetector = anomalyDetector;
             _registry = registry;
+            _predictiveEngine = predictiveEngine;
         }
 
         // GET: api/Prediction
         // Returns every sensor heading for its safe limit (Microsoft Learn, 2021)
         [HttpGet]
-        public ActionResult<IEnumerable<AnomalyPrediction>> GetAll()
+        public ActionResult<IEnumerable<PredictiveAction>> GetAll()
         {
-            return Ok(_anomalyDetector.GetAllAnomalies());
+            return Ok(_predictiveEngine.GetPredictiveActions());
         }
 
   
