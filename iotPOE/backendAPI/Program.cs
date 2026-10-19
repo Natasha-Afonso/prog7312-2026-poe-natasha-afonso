@@ -60,7 +60,8 @@ namespace backendAPI
             builder.Services.AddSingleton<DisconnectTrackerService>();
             builder.Services.AddHostedService<DisconnectWatcher>();
             builder.Services.AddSingleton<TimelineService>(); 
-
+             builder.Services.AddSingleton<AnomalyDetectionService>(); 
+ builder.Services.AddSingleton<PredictiveActionEngine>(); 
   builder.Services.AddSingleton<SearchHistoryService>(); 
   
             var app = builder.Build();
