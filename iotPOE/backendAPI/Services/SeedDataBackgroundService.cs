@@ -85,7 +85,7 @@ namespace backendAPI.Services
                         await dbContext.SaveChangesAsync(stoppingToken);
 
                         var telemetrySensors = allSensors.Where(s => s.Category != "Actuator").ToList();
-                        var batchSensors = telemetrySensors.OrderBy(x => _random.Next()).Take(_random.Next(1, 3)).ToList();
+                        var batchSensors = telemetrySensors.ToList();
 
                         if (batchSensors.Count > 0)
                         {

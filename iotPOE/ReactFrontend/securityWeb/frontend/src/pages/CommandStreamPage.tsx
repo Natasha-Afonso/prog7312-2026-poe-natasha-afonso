@@ -10,7 +10,7 @@ import type { DeviceSearchResult } from "../models/search.ts";
 import { PredictiveActions } from "../components/PredictiveActions.tsx";
 
 
-// the API sends UTC times, the saved history comes without a "Z" on the end
+// the API sends UTC times
 const formatTime = (timestamp: string | null): string => {
   if (!timestamp) {
     return "—";
@@ -20,7 +20,7 @@ const formatTime = (timestamp: string | null): string => {
   return new Date(iso).toLocaleTimeString([], { hour12: false });
 };
 
-// "PUMP:A: off → on | RELAY:01: off → on"
+// "PUMP:A: off -> on | RELAY:01: off -> on"
 const describeChanges = (record: CommandRecord): string => {
   return record.changes
     .map((change) => `${change.deviceIdentifier}: ${change.previousState ?? "?"} → ${change.newState}`)
@@ -328,13 +328,14 @@ export const CommandStreamPage: React.FC = () => {
                     ) : (
                       <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
                         <span style={{ fontSize: "16px", fontWeight: "600", color: "#f8fafc" }}>
-                          {device.lastReading ?? "—"}
+                          {device.lastReading ?? "(Read only)"}
                         </span>
                         <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
                           {device.category.toLowerCase().includes("temp") ? "°C" : 
                           device.category.toLowerCase().includes("power") ? "W" : 
                           device.category.toLowerCase().includes("water") ? "L/m" : 
-                          device.category.toLowerCase().includes("humid") ? "%" : ""}
+                          device.category.toLowerCase().includes("humid") ? "%" :
+                          device.category.toLowerCase().includes("occ") ? "%" : ""}
                         </span>
                       </div>
                     )}
